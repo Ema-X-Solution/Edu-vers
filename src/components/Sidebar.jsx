@@ -1,6 +1,7 @@
-import React from 'react';
+
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, UserSquare2, BookOpen, UserPlus, GraduationCap, LogOut } from 'lucide-react';
+import AuthLogo from './AuthLogo';
 
 const Sidebar = () => {
   const navItems = [
@@ -14,13 +15,8 @@ const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-white border-r border-[#E2E8F0] h-screen flex flex-col fixed left-0 top-0">
-      <div className="h-20 flex items-center px-6 border-b border-[#E2E8F0]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-main flex items-center justify-center text-white font-bold">
-            <span className="text-xs">Edu</span>
-          </div>
-          <span className="text-xl font-bold text-dark-blue">EduVerse</span>
-        </div>
+      <div className="flex min-h-20 items-center border-b border-[#E2E8F0] px-4 py-3">
+        <AuthLogo className="gap-2" />
       </div>
 
       <nav className="flex-1 py-6 px-4 flex flex-col gap-2">

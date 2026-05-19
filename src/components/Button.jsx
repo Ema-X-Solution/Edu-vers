@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 const Button = ({ 
   children, 
@@ -13,6 +13,8 @@ const Button = ({
   const variants = {
     primary: 'bg-main hover:bg-main-hover text-white',
     outline: 'border border-[#E2E8F0] bg-white text-dark-blue hover:bg-gray-50',
+    social:
+      'border border-[#E2E8F0] bg-transparent text-dark-blue hover:bg-transparent hover:border-[#CBD5E1]',
     ghost: 'bg-transparent text-gray-text hover:bg-gray-100 hover:text-dark-blue',
   };
   

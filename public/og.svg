@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(20,184,166,0.08)"/>
+      <stop offset="0.5" stop-color="#F6F6F8"/>
+      <stop offset="1" stop-color="rgba(20,184,166,0.08)"/>
+    </linearGradient>
+  </defs>
+  <rect x="400" y="165" width="400" height="300" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(520 235)">
+    <path
+      d="M80 130L40 108V68L20 56L80 24L140 56V108H128V62L120 68V108L80 130ZM80 78L128 52L80 26L32 52L80 78ZM80 118L112 100V76L80 92L48 76V100L80 118Z"
+      fill="#14B8A6"
+      transform="scale(1.15)"
+    />
+  </g>
+  <text
+    x="600"
+    y="400"
+    text-anchor="middle"
+    font-family="Inter, system-ui, sans-serif"
+    font-weight="900"
+    font-size="56"
+    letter-spacing="-1.4"
+    fill="#233142"
+  >
+    EduVerse
+  </text>
+  <text
+    x="600"
+    y="455"
+    text-anchor="middle"
+    font-family="Poppins, system-ui, sans-serif"
+    font-weight="500"
+    font-size="24"
+    fill="#64748B"
+  >
+    Your Academic Universe in One Place
+  </text>
+</svg>

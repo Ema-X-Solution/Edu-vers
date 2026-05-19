@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Poppins:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 
@@ -24,5 +24,17 @@
     background-color: var(--color-bg-app);
     color: var(--color-dark-text);
     -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .eduverse-logo-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 36px;
+    line-height: 40px;
+    letter-spacing: -0.9px;
+    color: var(--color-dark-blue);
+    vertical-align: middle;
   }
 }
