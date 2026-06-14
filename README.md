@@ -1,16 +1,57 @@
-# React + Vite
+# EduVerse 🎓 (إديو فيرس)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+EduVerse is a premium, Figma-compliant, and state-of-the-art school management administrative platform. It provides an intuitive workspace for administrative controllers to monitor student lists, manage academic staff, track registrations, review grade entries, and inspect core dashboard overview charts.
 
-Currently, two official plugins are available:
+The application is engineered with **Feature-Sliced Design (FSD)** architecture and uses the cutting-edge **Tailwind CSS v4** layout engine, **React 19**, and **Vite 8**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 📖 Complete Technical Documentation
+For an in-depth exploration of the project's folder layout, Feature-Sliced Design layers, custom UI atoms, services configuration, form validation patterns, routing matrices, dynamic charts, and design tokens, please refer to our dedicated technical guide:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+👉 **[TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)**
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Key Architectural Strengths
+* **Strict Feature-Sliced Design (FSD)**: Guarantees decoupled dependencies across `app`, `modules`, and `shared` layers.
+* **Tailwind CSS v4 Engine**: Pre-configured variables inside `@theme` in `src/index.css` for Cairo, Inter fonts, emerald teal (`#15B392`) brand colors, and dynamic keyframe animations.
+* **Dynamic Analytics Panel**: Highly interactive charts and metrics cards styled directly from Figma layouts.
+* **Robust CRUD Operations**: Student registries complete with search debounce handlers and pagination logic.
+* **Application Resilience**: Pre-configured `ErrorBoundary` system to capture JS errors during rendering cycles.
+
+---
+
+## 🛠️ Quick Start Guide
+
+### 1. Installation
+Install project dependencies from the repository root:
+```bash
+npm install
+```
+
+### 2. Environment Variables Configuration
+Setup your backend API URL. Create a `.env` or `.env.local` file:
+```env
+VITE_API_BASE_URL=https://api.eduverse.com/v1
+```
+
+### 3. Running Locally
+Run the Vite development server with Hot Module Replacement (HMR):
+```bash
+npm run dev
+```
+
+### 4. Compiling Production Build
+Build optimized production assets inside the `/dist` directory:
+```bash
+npm run build
+```
+
+---
+
+## 📂 Project Layers Overview
+
+* **`src/app/`**: Global initialization (routing entry `AppRouter.jsx`, global layouts, mounting script `main.jsx`, styling `index.css`).
+* **`src/modules/`**: Discrete feature components (`auth` for registration/login flows, `dashboard` for visual analytics charts, `students` for register tables).
+* **`src/shared/`**: Generic atomic components, custom hooks (`useDebounce`, `useLocalStorage`), network layers (`httpClient.js` fetch wrapper), and global path constants (`appConstants.js`).

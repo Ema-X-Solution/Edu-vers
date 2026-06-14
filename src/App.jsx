@@ -1,16 +1,16 @@
-import { Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
+import React from 'react';
+import AppRouter from '@/app/router';
+import ErrorBoundary from '@/app/providers/ErrorBoundary';
 
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/dashboard/students" element={<Students />} />
-    </Routes>
-  );
-}
+/**
+ * App — the root composition layer.
+ * Keeps routing, providers, and error boundaries here so
+ * individual pages stay completely free of global concerns.
+ */
+const App = () => (
+  <ErrorBoundary>
+    <AppRouter />
+  </ErrorBoundary>
+);
 
 export default App;
