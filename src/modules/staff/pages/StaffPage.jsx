@@ -1,18 +1,46 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/app/layouts';
-import { Button, Card } from '@/shared/ui';
-import { Users } from 'lucide-react';
+import { Button, Card, Table, Pagination } from '@/shared/ui';
+import useStaff from '../hooks/useStaff';
+import { STAFF_TABLE_COLUMNS } from '../constants/staffConstants.jsx';
+import StaffToolbar from '../components/StaffToolbar';
+import StaffActionsCell from '../components/StaffActionsCell';
 import CreateStaffModal from '../components/CreateStaffModal';
 
 /**
  * StaffPage — Academic Staff listing page.
- * Staff list data will be connected when backend endpoint is ready.
+ * Uses real API to fetch and render the Staff list.
  */
 const StaffPage = () => {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
+  const {
+    data,
+    total,
+    isLoading,
+    search,
+    statusFilter,
+    currentPage,
+    pageSize,
+    onSearch,
+    onStatusFilter,
+    onPageChange,
+    refetch,
+  } = useStaff();
+
+  const columns = STAFF_TABLE_COLUMNS.map((col) =>
+    col.key === 'actions'
+      ? {
+          ...col,
+          render: (_, staff) => <StaffActionsCell staff={staff} />,
+        }
+      : col
+  );
+
   return (
     <DashboardLayout
+      searchPlaceholder="Search staff by name, ID or email..."
+      onSearchChange={onSearch}
       topbarActions={
         <button
           onClick={() => setCreateModalOpen(true)}
@@ -22,7 +50,6 @@ const StaffPage = () => {
         </button>
       }
     >
-      {/* Page header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-dark-blue">Academic Staff</h1>
         <p className="text-gray-text text-sm mt-1">
@@ -30,25 +57,33 @@ const StaffPage = () => {
         </p>
       </div>
 
-      {/* Placeholder — will be replaced with a Table when the staff list endpoint is ready */}
-      <Card>
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-lighter-main flex items-center justify-center mb-4">
-            <Users className="text-main" size={28} />
-          </div>
-          <h3 className="text-base font-bold text-dark-blue mb-1">Staff Directory Coming Soon</h3>
-          <p className="text-gray-text text-sm max-w-xs">
-            The staff list will appear here once the backend endpoint is connected.
-            You can still add new staff members using the button above.
-          </p>
-        </div>
+      <Card noPadding>
+        <StaffToolbar
+          search={search}
+          statusFilter={statusFilter}
+          onSearch={onSearch}
+          onStatusFilter={onStatusFilter}
+        />
+
+        <Table
+          columns={columns}
+          data={data}
+          isLoading={isLoading}
+          emptyStateText="No staff members match your search."
+        />
+
+        <Pagination
+          currentPage={currentPage}
+          totalEntries={total}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+        />
       </Card>
 
-      {/* Create Staff Modal */}
       <CreateStaffModal
         isOpen={isCreateModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={() => { /* refetch when list is ready */ }}
+        onSuccess={() => refetch?.()}
       />
     </DashboardLayout>
   );

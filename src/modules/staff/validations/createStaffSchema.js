@@ -8,8 +8,6 @@ export const createStaffSchema = yup.object({
     .min(8, 'Password must be at least 8 characters')
     .matches(/[A-Z]/, 'Must contain at least one uppercase letter')
     .matches(/\d/, 'Must contain at least one number'),
-  role:            yup.string().required('Role is required').oneOf(['Doctor', 'TA']),
-  academicId:      yup.string().required('Academic ID is required'),
-  currentYear:     yup.string().required('Academic year is required'),
+  role:            yup.string().required('Role is required').oneOf(['Professor']),
 });
 

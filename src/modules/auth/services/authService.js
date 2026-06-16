@@ -18,7 +18,7 @@ export const loginUser = async ({ email, password }) => {
  * @param {{ fullName, email, password, phone, gender, dateOfBirth, department, role, academicId?, currentYear? }} payload
  */
 export const createAccount = async (payload) => {
-  return await httpClient.post('/auth/create-account', payload);
+  return await httpClient.post('/users/create-account', payload);
 };
 
 

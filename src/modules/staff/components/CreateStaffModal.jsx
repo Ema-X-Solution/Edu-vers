@@ -7,16 +7,8 @@ import PasswordField from '@/modules/auth/components/PasswordField';
 import { createAccount } from '@/modules/auth/services/authService';
 import { createStaffSchema } from '../validations/createStaffSchema';
 
-const YEAR_OPTIONS = [
-  { value: '1', label: '1st Year (Freshman)' },
-  { value: '2', label: '2nd Year (Sophomore)' },
-  { value: '3', label: '3rd Year (Junior)' },
-  { value: '4', label: '4th Year (Senior)' },
-];
-
 const ROLE_OPTIONS = [
-  { value: 'Doctor', label: 'Doctor' },
-  { value: 'TA', label: 'Teaching Assistant' }
+  { value: 'Professor', label: 'Professor' }
 ];
 
 const CreateStaffModal = ({ isOpen, onClose, onSuccess }) => {
@@ -26,8 +18,7 @@ const CreateStaffModal = ({ isOpen, onClose, onSuccess }) => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: yupResolver(createStaffSchema),
     defaultValues: {
-      fullName: '', email: '', password: '', role: 'Doctor',
-      academicId: '', currentYear: '',
+      fullName: '', email: '', password: '', role: 'Professor',
     },
   });
 
@@ -62,7 +53,7 @@ const CreateStaffModal = ({ isOpen, onClose, onSuccess }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {/* Row 1: Full Name & Email */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <FormField label="Full Name" htmlFor="st-fullName" error={errors.fullName?.message}>
             <Input id="st-fullName" placeholder="e.g. Dr. Ahmed Ali" icon={User} error={!!errors.fullName} {...register('fullName')} />
           </FormField>
@@ -72,7 +63,7 @@ const CreateStaffModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         {/* Row 2: Password & Role */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <FormField label="Password" htmlFor="st-password" error={errors.password?.message}>
             <PasswordField
               id="st-password"
@@ -83,16 +74,6 @@ const CreateStaffModal = ({ isOpen, onClose, onSuccess }) => {
           </FormField>
           <FormField label="Role" htmlFor="st-role" error={errors.role?.message}>
             <Select id="st-role" options={ROLE_OPTIONS} error={!!errors.role} {...register('role')} />
-          </FormField>
-        </div>
-
-        {/* Row 3: Academic ID & Academic Year */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <FormField label="Academic ID" htmlFor="st-academicId" error={errors.academicId?.message}>
-            <Input id="st-academicId" placeholder="e.g. #42022034" icon={Hash} error={!!errors.academicId} {...register('academicId')} />
-          </FormField>
-          <FormField label="Academic Year" htmlFor="st-year" error={errors.currentYear?.message}>
-            <Select id="st-year" placeholder="Select year" options={YEAR_OPTIONS} error={!!errors.currentYear} {...register('currentYear')} />
           </FormField>
         </div>
 

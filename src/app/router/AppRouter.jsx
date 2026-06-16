@@ -16,6 +16,9 @@ const StudentDashboardPage = lazy(() => import('@/modules/dashboard/pages/Studen
 const ProfDashboardPage    = lazy(() => import('@/modules/dashboard/pages/ProfDashboardPage'));
 const StudentsPage        = lazy(() => import('@/modules/students/pages/StudentsPage'));
 const StaffPage           = lazy(() => import('@/modules/staff/pages/StaffPage'));
+const CoursesPage         = lazy(() => import('@/modules/courses/pages/CoursesPage'));
+const CreateCoursePage    = lazy(() => import('@/modules/courses/pages/CreateCoursePage'));
+const CourseDetailsPage   = lazy(() => import('@/modules/courses/pages/CourseDetailsPage'));
 
 /** Full-page loading fallback shown during lazy chunk fetch */
 const PageLoader = () => (
@@ -41,9 +44,13 @@ const AppRouter = () => (
       <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboardPage />} />
       <Route path={ROUTES.PROF_DASHBOARD} element={<ProfDashboardPage />} />
 
-      {/* Students & Staff */}
+      {/* Students, Staff & Courses */}
       <Route path={ROUTES.STUDENTS}   element={<StudentsPage />} />
       <Route path={ROUTES.STAFF}      element={<StaffPage />} />
+      <Route path={ROUTES.COURSES}         element={<CoursesPage />} />
+      <Route path={ROUTES.COURSE_CREATE}   element={<CreateCoursePage />} />
+      <Route path={`${ROUTES.COURSE_EDIT}/:id`} element={<CreateCoursePage />} />
+      <Route path={`${ROUTES.COURSES}/:id`}     element={<CourseDetailsPage />} />
 
       {/* Fallback — redirect unknown paths to login or dashboard */}
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />

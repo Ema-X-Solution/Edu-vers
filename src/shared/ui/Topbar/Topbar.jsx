@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
 
-const Topbar = ({ onSearchChange, searchPlaceholder = 'Search for students, courses, documents...', actions }) => {
+const Topbar = ({ onSearchChange, searchPlaceholder = 'Search for students, courses, documents...', actions, onMenuToggle }) => {
   const [userInfo, setUserInfo] = useState({ fullName: '', userRole: '' });
 
   useEffect(() => {
@@ -16,10 +16,19 @@ const Topbar = ({ onSearchChange, searchPlaceholder = 'Search for students, cour
     : 'A';
 
   return (
-    <header className="h-20 bg-white border-b border-[#E2E8F0] px-8 flex items-center justify-between sticky top-0 z-10">
+    <header className="h-16 md:h-20 bg-white border-b border-[#E2E8F0] px-4 md:px-8 flex items-center sticky top-0 z-10 gap-3">
       
-      {/* Search Input exactly matching Figma */}
-      <div className="flex-1 max-w-[480px]">
+      {/* Hamburger — mobile only */}
+      <button
+        onClick={onMenuToggle}
+        className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:text-dark-blue hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+        aria-label="Open menu"
+      >
+        <Menu size={22} />
+      </button>
+
+      {/* Search Input */}
+      <div className="flex-1 max-w-[480px] hidden sm:block">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
           <input
@@ -32,22 +41,20 @@ const Topbar = ({ onSearchChange, searchPlaceholder = 'Search for students, cour
       </div>
       
       {/* Topbar Actions */}
-      <div className="flex items-center gap-3">
-        
-        {/* Optional page-level action buttons (e.g. Add New Student) */}
+      <div className="flex items-center gap-2 md:gap-3 ml-auto">
+        {/* Optional page-level action buttons */}
         {actions}
 
         {/* User Avatar Chip */}
-        <div className="flex items-center gap-2.5 pl-3 border-l border-[#E2E8F0]">
-          <div className="w-9 h-9 rounded-full bg-[#E0F2FE] text-[#0D9488] font-bold flex items-center justify-center text-xs border border-[#CCFBF1]">
+        <div className="flex items-center gap-2 pl-3 border-l border-[#E2E8F0]">
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#E0F2FE] text-[#0D9488] font-bold flex items-center justify-center text-xs border border-[#CCFBF1] shrink-0">
             {initials}
           </div>
-          <div className="flex flex-col leading-tight">
+          <div className="hidden md:flex flex-col leading-tight">
             <span className="text-xs font-bold text-[#0F172A] truncate max-w-[100px]">{userInfo.fullName}</span>
             <span className="text-[10px] font-medium text-[#94A3B8]">{userInfo.userRole}</span>
           </div>
         </div>
-
       </div>
     </header>
   );

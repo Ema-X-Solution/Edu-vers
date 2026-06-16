@@ -61,7 +61,7 @@ const CreateStudentModal = ({ isOpen, onClose, onSuccess }) => {
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {/* Row 1: Full Name & Email */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <FormField label="Full Name" htmlFor="s-fullName" error={errors.fullName?.message}>
             <Input id="s-fullName" placeholder="e.g. Ahmed Ali" icon={User} error={!!errors.fullName} {...register('fullName')} />
           </FormField>
@@ -71,7 +71,7 @@ const CreateStudentModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         {/* Row 2: Password & Role */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <FormField label="Password" htmlFor="s-password" error={errors.password?.message}>
             <PasswordField
               id="s-password"
@@ -86,7 +86,7 @@ const CreateStudentModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         {/* Row 3: Academic ID & Academic Year */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <FormField label="Academic ID" htmlFor="s-academicId" error={errors.academicId?.message}>
             <Input id="s-academicId" placeholder="e.g. #42022034" icon={Hash} error={!!errors.academicId} {...register('academicId')} />
           </FormField>

@@ -1,18 +1,17 @@
 /**
- * Students service — thin API layer.
- * Interacts with the real backend endpoints.
+ * Staff service — API layer for the Staff module.
  */
 
 import httpClient from '@/shared/services/httpClient';
 
 /**
- * Fetch a paginated + filtered slice of students.
+ * Fetch a paginated + filtered slice of staff (Professors).
  * @param {{ search?: string, status?: string, page?: number, pageSize?: number }} params
  * @returns {Promise<{ data: object[], total: number }>}
  */
-export const fetchStudents = async ({ search = '', status = '', page = 1, pageSize = 5 } = {}) => {
+export const fetchStaff = async ({ search = '', status = '', page = 1, pageSize = 5 } = {}) => {
   const query = new URLSearchParams({
-    role: 'Student',
+    role: 'Professor',
     page,
     limit: pageSize
   });
@@ -22,14 +21,10 @@ export const fetchStudents = async ({ search = '', status = '', page = 1, pageSi
 
   const response = await httpClient.get(`/users?${query.toString()}`);
   
-  // The exact structure of `response` depends on the backend.
-  // We assume the backend returns `{ data: [...], total: ... }` or similar.
-  // If the backend returns just an array, we map it:
   if (Array.isArray(response)) {
-    return { data: response, total: response.length }; // Fallback if no total is provided
+    return { data: response, total: response.length };
   }
 
-  // Assuming standard pagination response with users inside a property like `users` or `data`
   return {
     data: response.data || response.users || response,
     total: response.total || response.count || (response.data?.length ?? 0)
@@ -37,18 +32,18 @@ export const fetchStudents = async ({ search = '', status = '', page = 1, pageSi
 };
 
 /**
- * Delete a student by ID.
+ * Delete a staff member by ID.
  * @param {string} id
  */
-export const deleteStudent = async (id) => {
+export const deleteStaff = async (id) => {
   return await httpClient.delete(`/users/${id}`);
 };
 
 /**
- * Update a student by ID.
+ * Update a staff member by ID.
  * @param {string} id
  * @param {object} payload
  */
-export const updateStudent = async (id, payload) => {
+export const updateStaff = async (id, payload) => {
   return await httpClient.patch(`/auth/user/${id}`, payload);
 };
