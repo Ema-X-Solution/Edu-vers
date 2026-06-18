@@ -16,6 +16,7 @@ export const ROUTES = {
   STUDENTS:   '/dashboard/students',
   STAFF:      '/dashboard/staff',
   COURSES:    '/dashboard/courses',
+  STUDENT_COURSES: '/student-courses',
   COURSE_CREATE: '/dashboard/courses/create',
   COURSE_EDIT:   '/dashboard/courses/edit',
   REGISTRATION: '/dashboard/registration',

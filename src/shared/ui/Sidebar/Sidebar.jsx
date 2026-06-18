@@ -1,10 +1,12 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Landmark, BookOpen, ClipboardList, Star, LogOut, GraduationCap, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, Landmark, BookOpen, ClipboardList, Star, LogOut, GraduationCap, X, ChevronDown, MessageSquare } from 'lucide-react';
 import { ROUTES } from '@/shared/constants';
 
 const Sidebar = ({ isOpen = false, setIsOpen }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isCommunitiesOpen, setIsCommunitiesOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
@@ -13,7 +15,9 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
     navigate(ROUTES.LOGIN);
   };
 
-  const navItems = [
+  const isStudentFlow = location.pathname.includes('student');
+
+  const adminNavItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Students', path: '/dashboard/students', icon: Users },
     { name: 'Academic Staff', path: '/dashboard/staff', icon: Landmark },
@@ -22,16 +26,34 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
     { name: 'Grades', path: '/dashboard/grades', icon: Star },
   ];
 
+  const studentNavItems = [
+    { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
+    { name: 'Courses', path: '/student-courses', icon: BookOpen },
+    { name: 'Communities', path: '#', icon: Users, isDropdown: true },
+  ];
+
+  const mockCommunities = [
+    { name: 'Design Guild', path: '/communities/design' },
+    { name: 'CyberCrew', path: '/communities/cyber' },
+    { name: 'Robotics Club', path: '/communities/robotics' },
+  ];
+
+  const navItems = isStudentFlow ? studentNavItems : adminNavItems;
+
   const [userInfo, setUserInfo] = React.useState({ fullName: 'Edu-System(Admin 1)', userRole: 'Admin' });
 
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem('user_info');
-      if (stored) setUserInfo(JSON.parse(stored));
+      if (stored) {
+        setUserInfo(JSON.parse(stored));
+      } else if (isStudentFlow) {
+        setUserInfo({ fullName: 'John Hany', userRole: 'Student' });
+      }
     } catch (err) {
       console.error('Failed to parse user_info', err);
     }
-  }, []);
+  }, [isStudentFlow]);
 
   const initials = userInfo.fullName
     ? userInfo.fullName.substring(0, 2).toUpperCase()
@@ -47,7 +69,7 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
       `}
     >
       {/* Brand logo section */}
-      <div className="h-20 flex items-center justify-between px-6 border-b border-[#E2E8F0]/80 bg-white">
+      <div className="h-20 flex items-center justify-between px-6 border-b border-[#E2E8F0]/80 bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-[0_4px_12px_rgba(13,148,136,0.08)] border border-[#E2E8F0]">
             <GraduationCap className="text-[#0D9488]" size={20} />
@@ -69,26 +91,64 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
       {/* Navigation links */}
       <nav className="flex-1 py-6 px-4 flex flex-col gap-1.5 overflow-y-auto">
         {navItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            end={item.path === '/dashboard'}
-            onClick={() => setIsOpen?.(false)}
-            className={({ isActive }) => `
-              flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer
-              ${isActive
-                ? 'bg-[#EFF2FC] text-[#0D9488] shadow-sm'
-                : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0D9488]'}
-            `}
-          >
-            <item.icon size={18} />
-            {item.name}
-          </NavLink>
+          <div key={item.name}>
+            {item.isDropdown ? (
+              <button
+                onClick={() => setIsCommunitiesOpen(!isCommunitiesOpen)}
+                className={`
+                  w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer
+                  ${isCommunitiesOpen ? 'text-[#0D9488]' : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0D9488]'}
+                `}
+              >
+                <div className="flex items-center gap-3.5">
+                  <item.icon size={18} />
+                  {item.name}
+                </div>
+                <ChevronDown size={16} className={`transition-transform duration-200 ${isCommunitiesOpen ? 'rotate-180' : ''}`} />
+              </button>
+            ) : (
+              <NavLink
+                to={item.path}
+                end={item.path === '/dashboard' || item.path === '/student-dashboard'}
+                onClick={() => setIsOpen?.(false)}
+                className={({ isActive }) => `
+                  flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer
+                  ${isActive
+                    ? 'bg-[#EFF2FC] text-[#0D9488] shadow-sm'
+                    : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0D9488]'}
+                `}
+              >
+                <item.icon size={18} />
+                {item.name}
+              </NavLink>
+            )}
+
+            {/* Dropdown Content */}
+            {item.isDropdown && isCommunitiesOpen && (
+              <div className="mt-1 ml-4 pl-4 border-l border-gray-100 flex flex-col gap-1 animate-fade-in">
+                {mockCommunities.map((community, idx) => (
+                  <NavLink
+                    key={idx}
+                    to={community.path}
+                    className={({ isActive }) => `
+                      flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer
+                      ${isActive
+                        ? 'bg-[#EFF2FC] text-[#0D9488]'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-[#0D9488]'}
+                    `}
+                  >
+                    <MessageSquare size={14} />
+                    {community.name}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
 
       {/* Bottom Profile Card */}
-      <div className="p-4 border-t border-[#E2E8F0]/80">
+      <div className="p-4 border-t border-[#E2E8F0]/80 shrink-0">
         <div
           onClick={handleLogout}
           className="flex items-center justify-between p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-red-50 hover:border-red-100 group transition-colors duration-200 cursor-pointer"

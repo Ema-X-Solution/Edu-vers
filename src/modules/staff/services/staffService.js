@@ -45,5 +45,5 @@ export const deleteStaff = async (id) => {
  * @param {object} payload
  */
 export const updateStaff = async (id, payload) => {
-  return await httpClient.patch(`/auth/user/${id}`, payload);
+  return await httpClient.patch(`/users/${id}`, payload);
 };

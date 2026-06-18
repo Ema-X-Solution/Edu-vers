@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/app/layouts';
-import { Button, Card, Table, Pagination } from '@/shared/ui';
+import { Button, Card, Table, Pagination, ConfirmModal } from '@/shared/ui';
 import useStudents from '../hooks/useStudents';
 import { STUDENTS_TABLE_COLUMNS } from '../constants/studentsConstants.jsx';
 import StudentsToolbar from '../components/StudentsToolbar';
 import StudentActionsCell from '../components/StudentActionsCell';
 import CreateStudentModal from '../components/CreateStudentModal';
+import EditStudentModal from '../components/EditStudentModal';
 
 /**
  * StudentsPage — pure presentational shell.
@@ -13,6 +14,9 @@ import CreateStudentModal from '../components/CreateStudentModal';
  */
 const StudentsPage = () => {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [deletingStudent, setDeletingStudent] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     data,
@@ -28,13 +32,34 @@ const StudentsPage = () => {
     refetch,
   } = useStudents();
 
-  // Inject the actions column renderer at render time so it can
-  // close over page-level handlers without coupling the constants file to React.
+  const confirmDelete = async () => {
+    if (!deletingStudent) return;
+    setIsDeleting(true);
+    try {
+      const { deleteStudent } = await import('../services/studentsService');
+      await deleteStudent(deletingStudent._id);
+      refetch?.();
+      setDeletingStudent(null);
+    } catch (err) {
+      alert(err.message || 'Failed to delete student.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDelete = (student) => {
+    setDeletingStudent(student);
+  };
+
+  const handleEdit = (student) => {
+    setEditingStudent(student);
+  };
+
   const columns = STUDENTS_TABLE_COLUMNS.map((col) =>
     col.key === 'actions'
       ? {
           ...col,
-          render: (_, student) => <StudentActionsCell student={student} />,
+          render: (_, student) => <StudentActionsCell student={student} onEdit={handleEdit} onDelete={handleDelete} />,
         }
       : col
   );
@@ -89,6 +114,24 @@ const StudentsPage = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSuccess={() => refetch?.()}
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        isOpen={!!editingStudent}
+        student={editingStudent}
+        onClose={() => setEditingStudent(null)}
+        onSuccess={() => refetch?.()}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingStudent}
+        onClose={() => setDeletingStudent(null)}
+        onConfirm={confirmDelete}
+        title="Delete Student"
+        message={`Are you sure you want to delete ${deletingStudent?.fullName}? This action cannot be undone.`}
+        confirmText="Delete"
+        isLoading={isDeleting}
       />
     </DashboardLayout>
   );

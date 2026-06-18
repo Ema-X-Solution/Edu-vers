@@ -1,24 +1,27 @@
 // Column definitions for the students table
 // Using a `render` function allows any cell to output custom JSX without polluting the page component
 export const STUDENTS_TABLE_COLUMNS = [
-  { key: 'id',     header: 'Student ID'    },
-  { key: 'name',   header: 'Name'          },
+  { key: 'academicId',     header: 'Student ID'    },
+  { key: 'fullName',   header: 'Name'          },
   { key: 'email',  header: 'Email Address' },
-  { key: 'major',  header: 'Major'         },
+  { key: 'department',  header: 'Major'         },
   {
     key: 'status',
     header: 'Status',
-    render: (value) => (
+    render: (value) => {
+      const isAct = value?.toLowerCase() === 'active';
+      return (
       <span
         className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-          value === 'Active'
+          isAct
             ? 'bg-percentage-up/10 text-percentage-up'
             : 'bg-percentage-down/10 text-percentage-down'
         }`}
       >
         {value}
       </span>
-    ),
+      );
+    },
   },
   { key: 'actions', header: 'Actions', align: 'right' },
 ];

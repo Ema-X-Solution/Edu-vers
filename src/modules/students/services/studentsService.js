@@ -50,5 +50,5 @@ export const deleteStudent = async (id) => {
  * @param {object} payload
  */
 export const updateStudent = async (id, payload) => {
-  return await httpClient.patch(`/auth/user/${id}`, payload);
+  return await httpClient.patch(`/users/${id}`, payload);
 };

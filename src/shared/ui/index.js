@@ -3,6 +3,7 @@ export { default as Input } from './Input';
 export { default as FormField } from './FormField';
 export { default as Select } from './Select';
 export { default as Modal } from './Modal';
+export { default as ConfirmModal } from './ConfirmModal';
 export { default as Table } from './Table';
 export { default as Pagination } from './Pagination';
 export { default as Loader } from './Loader';

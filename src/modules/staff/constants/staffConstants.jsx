@@ -9,10 +9,11 @@ export const STAFF_TABLE_COLUMNS = [
     header: 'Status',
     render: (value) => {
       const displayValue = value || 'Active';
+      const isAct = displayValue?.toLowerCase() === 'active';
       return (
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-            displayValue === 'Active'
+            isAct
               ? 'bg-percentage-up/10 text-percentage-up'
               : 'bg-percentage-down/10 text-percentage-down'
           }`}

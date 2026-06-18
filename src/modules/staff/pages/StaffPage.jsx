@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '@/app/layouts';
-import { Button, Card, Table, Pagination } from '@/shared/ui';
+import { Button, Card, Table, Pagination, ConfirmModal } from '@/shared/ui';
 import useStaff from '../hooks/useStaff';
 import { STAFF_TABLE_COLUMNS } from '../constants/staffConstants.jsx';
 import StaffToolbar from '../components/StaffToolbar';
 import StaffActionsCell from '../components/StaffActionsCell';
 import CreateStaffModal from '../components/CreateStaffModal';
+import EditStaffModal from '../components/EditStaffModal';
 
 /**
  * StaffPage — Academic Staff listing page.
@@ -13,6 +14,9 @@ import CreateStaffModal from '../components/CreateStaffModal';
  */
 const StaffPage = () => {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState(null);
+  const [deletingStaff, setDeletingStaff] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     data,
@@ -28,11 +32,34 @@ const StaffPage = () => {
     refetch,
   } = useStaff();
 
+  const confirmDelete = async () => {
+    if (!deletingStaff) return;
+    setIsDeleting(true);
+    try {
+      const { deleteStaff } = await import('../services/staffService');
+      await deleteStaff(deletingStaff._id);
+      refetch?.();
+      setDeletingStaff(null);
+    } catch (err) {
+      alert(err.message || 'Failed to delete staff member.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDelete = (staff) => {
+    setDeletingStaff(staff);
+  };
+
+  const handleEdit = (staff) => {
+    setEditingStaff(staff);
+  };
+
   const columns = STAFF_TABLE_COLUMNS.map((col) =>
     col.key === 'actions'
       ? {
           ...col,
-          render: (_, staff) => <StaffActionsCell staff={staff} />,
+          render: (_, staff) => <StaffActionsCell staff={staff} onEdit={handleEdit} onDelete={handleDelete} />,
         }
       : col
   );
@@ -85,8 +112,26 @@ const StaffPage = () => {
         onClose={() => setCreateModalOpen(false)}
         onSuccess={() => refetch?.()}
       />
+
+      <EditStaffModal
+        isOpen={!!editingStaff}
+        staff={editingStaff}
+        onClose={() => setEditingStaff(null)}
+        onSuccess={() => refetch?.()}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingStaff}
+        onClose={() => setDeletingStaff(null)}
+        onConfirm={confirmDelete}
+        title="Delete Staff Member"
+        message={`Are you sure you want to delete ${deletingStaff?.fullName}? This action cannot be undone.`}
+        confirmText="Delete"
+        isLoading={isDeleting}
+      />
     </DashboardLayout>
   );
 };
 
 export default StaffPage;
+

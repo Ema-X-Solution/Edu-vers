@@ -17,6 +17,7 @@ const ProfDashboardPage    = lazy(() => import('@/modules/dashboard/pages/ProfDa
 const StudentsPage        = lazy(() => import('@/modules/students/pages/StudentsPage'));
 const StaffPage           = lazy(() => import('@/modules/staff/pages/StaffPage'));
 const CoursesPage         = lazy(() => import('@/modules/courses/pages/CoursesPage'));
+const StudentCoursesPage  = lazy(() => import('@/modules/courses/pages/StudentCoursesPage'));
 const CreateCoursePage    = lazy(() => import('@/modules/courses/pages/CreateCoursePage'));
 const CourseDetailsPage   = lazy(() => import('@/modules/courses/pages/CourseDetailsPage'));
 
@@ -48,6 +49,7 @@ const AppRouter = () => (
       <Route path={ROUTES.STUDENTS}   element={<StudentsPage />} />
       <Route path={ROUTES.STAFF}      element={<StaffPage />} />
       <Route path={ROUTES.COURSES}         element={<CoursesPage />} />
+      <Route path={ROUTES.STUDENT_COURSES} element={<StudentCoursesPage />} />
       <Route path={ROUTES.COURSE_CREATE}   element={<CreateCoursePage />} />
       <Route path={`${ROUTES.COURSE_EDIT}/:id`} element={<CreateCoursePage />} />
       <Route path={`${ROUTES.COURSES}/:id`}     element={<CourseDetailsPage />} />
