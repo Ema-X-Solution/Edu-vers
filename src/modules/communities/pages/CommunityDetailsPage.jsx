@@ -19,7 +19,9 @@ import {
   updateClubPost,
   addCommentToPost,
   pinClubPost,
-  unpinClubPost
+  unpinClubPost,
+  getPostComments,
+  deleteCommentFromPost
 } from '../services/communitiesService';
 
 // ─── Shared Tag Config ────────────────────────────────────────────────────────
@@ -356,8 +358,16 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
       setCommentsLoading(true);
       try {
         const res = await getPostComments(post._id);
-        const data = res?.data || res || [];
-        setComments(Array.isArray(data) ? data : []);
+        let data = res?.data || res;
+        let fetchedComments = [];
+        if (Array.isArray(data)) {
+          fetchedComments = data;
+        } else if (data?.comments && Array.isArray(data.comments)) {
+          fetchedComments = data.comments;
+        } else if (data?.data && Array.isArray(data.data)) {
+          fetchedComments = data.data;
+        }
+        setComments(fetchedComments);
       } catch (err) {
         console.error('Failed to load comments:', err);
       } finally {
@@ -519,9 +529,9 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
           ) : comments.length > 0 ? (
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
               {comments.map((comment, idx) => {
-                const commentUser = comment.authorName || comment.userId?.name || comment.author?.name || 'User';
+                const commentUser = comment.authorId?.fullName || comment.authorName || comment.userId?.name || comment.author?.name || 'User';
                 const commentInitials = commentUser.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-                const isCommentAuthor = currentUser?.userId === comment.authorId || currentUser?._id === comment.authorId || currentUser?.userId === comment.userId?._id || currentUser?.userId === comment.userId;
+                const isCommentAuthor = currentUser?.userId === comment.authorId?._id || currentUser?._id === comment.authorId?._id || currentUser?.userId === comment.authorId || currentUser?._id === comment.authorId || currentUser?.userId === comment.userId?._id || currentUser?.userId === comment.userId;
                 const canDeleteComment = isCommentAuthor || isAdmin || currentUser?.userRole?.toLowerCase() === 'admin';
 
                 return (

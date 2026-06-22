@@ -7,7 +7,7 @@ import {
   Upload, Bell, ChevronDown, X, GraduationCap, Check, Activity, Pin, Edit2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { fetchCommunitiesStatus, createCommunity, updateCommunity, deleteCommunity } from '../services/communitiesService';
+import { fetchCommunitiesStatus, createCommunity, updateCommunity, deleteCommunity, rateCommunity } from '../services/communitiesService';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const MOCK_COMMUNITIES = [
@@ -99,6 +99,109 @@ const CLUB_TAGS = [
   { value: '#DATABASE', label: 'Database', color: 'text-cyan-600 bg-cyan-50', from: 'from-cyan-500', to: 'to-cyan-600' },
 ];
 
+// ─── Rating Modal ────────────────────────────────────────────────────────────
+const RatingModal = ({ isOpen, onClose, community, onSuccess }) => {
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [selectedStar, setSelectedStar] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setHoveredStar(0);
+      setSelectedStar(0);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async () => {
+    if (!selectedStar) {
+      toast.error('Please select a rating first.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await rateCommunity(community._id, { score: selectedStar });
+      toast.success('Rating submitted successfully!');
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      let errorMsg = 'Failed to submit rating.';
+      if (error?.message) errorMsg = Array.isArray(error.message) ? error.message.join('\n') : error.message;
+      toast.error(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Rate Community" size="sm">
+      <div className="flex flex-col items-center gap-5 py-2">
+        <div className="w-16 h-16 rounded-2xl bg-yellow-50 flex items-center justify-center">
+          <Star size={32} className="text-yellow-400 fill-yellow-400" />
+        </div>
+        <div className="text-center">
+          <h3 className="text-lg font-extrabold text-dark-blue mb-1">{community?.name}</h3>
+          <p className="text-sm text-gray-500">How would you rate this community?</p>
+        </div>
+
+        {/* Stars */}
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setSelectedStar(star)}
+              onMouseEnter={() => setHoveredStar(star)}
+              onMouseLeave={() => setHoveredStar(0)}
+              className="transition-transform hover:scale-110 cursor-pointer focus:outline-none"
+            >
+              <Star
+                size={36}
+                className={`transition-colors ${
+                  star <= (hoveredStar || selectedStar)
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-gray-200 fill-gray-200'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+
+        {/* Label */}
+        <div className="h-6">
+          {(hoveredStar || selectedStar) > 0 && (
+            <span className="text-sm font-bold text-yellow-500">
+              {ratingLabels[hoveredStar || selectedStar]}
+            </span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 w-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isLoading || !selectedStar}
+            className={`flex-1 h-10 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-2
+              ${isLoading || !selectedStar ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <Star size={16} className="fill-white" />
+            {isLoading ? 'Submitting...' : 'Submit Rating'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
 const Toggle = ({ checked, onChange }) => (
   <button
@@ -113,10 +216,10 @@ const Toggle = ({ checked, onChange }) => (
 );
 
 // ─── Community Card ───────────────────────────────────────────────────────────
-const CommunityCard = ({ community, onDelete, onEdit, onView }) => {
+const CommunityCard = ({ community, onDelete, onEdit, onView, onRate }) => {
   const tags = community.tags || [];
   let bgGradient = 'bg-gray-400';
-  
+
   if (tags.length === 1) {
     const tag1 = CLUB_TAGS.find(t => t.value === tags[0]);
     if (tag1) bgGradient = `bg-gradient-to-br ${tag1.from} ${tag1.to}`;
@@ -129,14 +232,23 @@ const CommunityCard = ({ community, onDelete, onEdit, onView }) => {
     bgGradient = `bg-gradient-to-br ${community.color}`;
   }
 
+  const hasImage = !!community.imageUrl;
+
   return (
     <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
-      {/* Card Banner */}
-      <div className={`h-28 ${bgGradient} relative`}>
+      {/* Card Banner — image if available, gradient fallback */}
+      <div className={`h-28 relative ${!hasImage ? bgGradient : ''}`}>
+        {hasImage && (
+          <img
+            src={community.imageUrl}
+            alt={community.name}
+            className="w-full h-full object-cover"
+          />
+        )}
         {/* Rating badge */}
         <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 rounded-lg px-2.5 py-1">
           <Star size={14} className="text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-sm font-bold">{community.rating}</span>
+          <span className="text-white text-sm font-bold">{community.rating ?? 0}</span>
         </div>
       </div>
 
@@ -145,58 +257,69 @@ const CommunityCard = ({ community, onDelete, onEdit, onView }) => {
         {/* Icon floating */}
         <div className="absolute -top-8 left-5">
           <div className={`w-16 h-16 rounded-2xl ${bgGradient} flex items-center justify-center border-4 border-white shadow-sm`}>
-            <Users size={28} className="text-white" />
+            {hasImage ? (
+              <img src={community.imageUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+            ) : (
+              <Users size={28} className="text-white" />
+            )}
           </div>
         </div>
 
-      <div className="mt-12">
-        <h3 className="font-extrabold text-dark-blue text-xl mb-2">{community.name}</h3>
-        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4" title={community.description}>{community.description}</p>
-      </div>
+        <div className="mt-12">
+          <h3 className="font-extrabold text-dark-blue text-xl mb-2">{community.name}</h3>
+          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4" title={community.description}>{community.description}</p>
+        </div>
 
-      {/* Tags */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {community.tags?.map(tag => {
-          const matchedTag = CLUB_TAGS.find(t => t.value === tag);
-          return (
-            <span key={tag} className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${matchedTag ? matchedTag.color : 'text-gray-600 bg-gray-100'}`}>
-              {matchedTag ? matchedTag.label : tag}
-            </span>
-          );
-        })}
-      </div>
+        {/* Tags */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {community.tags?.map(tag => {
+            const matchedTag = CLUB_TAGS.find(t => t.value === tag);
+            return (
+              <span key={tag} className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${matchedTag ? matchedTag.color : 'text-gray-600 bg-gray-100'}`}>
+                {matchedTag ? matchedTag.label : tag}
+              </span>
+            );
+          })}
+        </div>
 
-      <div className="mt-auto">
-        <hr className="border-t border-dashed border-gray-200 mb-4" />
-        
-        {/* Meta */}
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
-            <span className="flex items-center gap-1.5"><Users size={14} /> {community.membersCount || 0} Members</span>
+        <div className="mt-auto">
+          <hr className="border-t border-dashed border-gray-200 mb-4" />
+
+          {/* Meta */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
+              <span className="flex items-center gap-1.5"><Users size={14} /> {community.membersCount || 0} Members</span>
+            </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={() => onEdit(community)}
-            className="flex-1 h-10 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
-          >
-            <Edit2 size={16} />
-          </button>
-          <button
-            onClick={() => onDelete(community)}
-            className="flex-1 h-10 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
-          >
-            Delete
-          </button>
-          <button
-            onClick={() => onView(community)}
-            className="flex-1 h-10 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
-          >
-            View
-          </button>
-        </div>
+          {/* Actions */}
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => onRate(community)}
+              className="flex-1 h-10 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Star size={14} className="fill-yellow-500 text-yellow-500" />
+              Rate
+            </button>
+            <button
+              onClick={() => onEdit(community)}
+              className="w-10 h-10 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center shrink-0"
+            >
+              <Edit2 size={16} />
+            </button>
+            <button
+              onClick={() => onDelete(community)}
+              className="flex-1 h-10 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => onView(community)}
+              className="flex-1 h-10 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
+            >
+              View
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -473,6 +596,7 @@ const CommunitiesPage = () => {
   const [communities, setCommunities] = useState([]);
   const [stats, setStats] = useState({ totalPosts: 0, pinnedPosts: 0, totalMembers: 0, count: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [ratingTarget, setRatingTarget] = useState(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -628,6 +752,7 @@ const CommunitiesPage = () => {
               onDelete={handleDelete} 
               onEdit={openEdit}
               onView={(c) => navigate(`/communities/${c._id}`)}
+              onRate={(c) => setRatingTarget(c)}
             />
           ))}
         </div>
@@ -650,6 +775,13 @@ const CommunitiesPage = () => {
         confirmText="Delete"
         cancelText="Cancel"
         isDestructive={true}
+      />
+
+      <RatingModal
+        isOpen={!!ratingTarget}
+        onClose={() => setRatingTarget(null)}
+        community={ratingTarget}
+        onSuccess={loadData}
       />
     </DashboardLayout>
   );

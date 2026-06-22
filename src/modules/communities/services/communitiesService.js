@@ -6,6 +6,10 @@ export const fetchCommunitiesStatus = async (search = '') => {
   return await httpClient.get(`/community/status?${query.toString()}`);
 };
 
+export const fetchTopRatedCommunities = async () => {
+  return await httpClient.get(`/community/top-rated`);
+};
+
 export const createCommunity = async (formData) => {
   return await httpClient.post('/community/create-club', formData);
 };
@@ -55,7 +59,7 @@ export const addCommentToPost = async (postId, content) => {
 };
 
 export const deleteCommentFromPost = async (postId, commentId) => {
-  return await httpClient.delete(`/community/posts/${postId}/comments/${commentId}`);
+  return await httpClient.delete(`/community/comments/${commentId}`);
 };
 
 export const pinClubPost = async (postId) => {
@@ -72,4 +76,8 @@ export const joinCommunity = async (clubId) => {
 
 export const leaveCommunity = async (clubId) => {
   return await httpClient.get(`/community/clubs/${clubId}/leave`);
+};
+
+export const rateCommunity = async (clubId, payload) => {
+  return await httpClient.post(`/community/${clubId}/rate`, payload);
 };
