@@ -19,7 +19,8 @@ export const ROUTES = {
   STUDENT_COURSES: '/student-courses',
   COURSE_CREATE: '/dashboard/courses/create',
   COURSE_EDIT:   '/dashboard/courses/edit',
-  REGISTRATION: '/dashboard/registration',
+  COMMUNITIES:   '/dashboard/communities',
+  STUDENT_COMMUNITIES: '/student-communities',
   GRADES:     '/dashboard/grades',
 };
 

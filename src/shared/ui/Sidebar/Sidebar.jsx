@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Landmark, BookOpen, ClipboardList, Star, LogOut, GraduationCap, X, ChevronDown, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Landmark, BookOpen, ClipboardList, Star, LogOut, GraduationCap, X, ChevronDown, MessageSquare, Users2 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants';
 
 const Sidebar = ({ isOpen = false, setIsOpen }) => {
@@ -15,31 +15,8 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
     navigate(ROUTES.LOGIN);
   };
 
-  const isStudentFlow = location.pathname.includes('student');
-
-  const adminNavItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Students', path: '/dashboard/students', icon: Users },
-    { name: 'Academic Staff', path: '/dashboard/staff', icon: Landmark },
-    { name: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-    { name: 'Registration', path: '/dashboard/registration', icon: ClipboardList },
-    { name: 'Grades', path: '/dashboard/grades', icon: Star },
-  ];
-
-  const studentNavItems = [
-    { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
-    { name: 'Courses', path: '/student-courses', icon: BookOpen },
-    { name: 'Communities', path: '#', icon: Users, isDropdown: true },
-  ];
-
-  const mockCommunities = [
-    { name: 'Design Guild', path: '/communities/design' },
-    { name: 'CyberCrew', path: '/communities/cyber' },
-    { name: 'Robotics Club', path: '/communities/robotics' },
-  ];
-
-  const navItems = isStudentFlow ? studentNavItems : adminNavItems;
-
+  // ✅ Determine the navigation items based on the actual user role stored after login
+  // NOT from the URL (URL-based detection caused Admins on /dashboard/students to switch to student nav)
   const [userInfo, setUserInfo] = React.useState({ fullName: 'Edu-System(Admin 1)', userRole: 'Admin' });
 
   React.useEffect(() => {
@@ -47,17 +24,52 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
       const stored = localStorage.getItem('user_info');
       if (stored) {
         setUserInfo(JSON.parse(stored));
-      } else if (isStudentFlow) {
-        setUserInfo({ fullName: 'John Hany', userRole: 'Student' });
       }
     } catch (err) {
       console.error('Failed to parse user_info', err);
     }
-  }, [isStudentFlow]);
+  }, []);
+
+  const role = (userInfo.userRole || '').toLowerCase();
+  const isStudentFlow = role === 'student';
+  const isProfFlow    = role === 'professor' || role === 'prof';
+
+  const adminNavItems = [
+    { name: 'Dashboard',      path: '/dashboard',             icon: LayoutDashboard },
+    { name: 'Students',       path: '/dashboard/students',    icon: Users },
+    { name: 'Academic Staff', path: '/dashboard/staff',       icon: Landmark },
+    { name: 'Courses',        path: '/dashboard/courses',     icon: BookOpen },
+    { name: 'Communities',    path: '/dashboard/communities', icon: Users2 },
+    { name: 'Grades',         path: '/dashboard/grades',      icon: Star },
+  ];
+
+  const studentNavItems = [
+    { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
+    { name: 'Courses',   path: '/student-courses',   icon: BookOpen },
+    { name: 'Communities', path: '/student-communities', icon: Users, isDropdown: true },
+  ];
+
+  const profNavItems = [
+    { name: 'Dashboard', path: '/prof-dashboard', icon: LayoutDashboard },
+    { name: 'Courses',   path: '/dashboard/courses', icon: BookOpen },
+  ];
+
+  const mockCommunities = [
+    { name: 'Design Guild',  path: '/communities/design' },
+    { name: 'CyberCrew',     path: '/communities/cyber' },
+    { name: 'Robotics Club', path: '/communities/robotics' },
+  ];
+
+  const navItems = isStudentFlow
+    ? studentNavItems
+    : isProfFlow
+      ? profNavItems
+      : adminNavItems;
 
   const initials = userInfo.fullName
     ? userInfo.fullName.substring(0, 2).toUpperCase()
     : 'U';
+
 
   return (
     <aside
@@ -93,19 +105,30 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
         {navItems.map((item) => (
           <div key={item.name}>
             {item.isDropdown ? (
-              <button
-                onClick={() => setIsCommunitiesOpen(!isCommunitiesOpen)}
+              /* Navigate to the page AND toggle the dropdown */
+              <div
                 className={`
-                  w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer
-                  ${isCommunitiesOpen ? 'text-[#0D9488]' : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0D9488]'}
+                  flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200
+                  ${(isCommunitiesOpen || location.pathname === item.path) ? 'bg-[#EFF2FC] text-[#0D9488]' : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0D9488]'}
                 `}
               >
-                <div className="flex items-center gap-3.5">
+                <button
+                  onClick={() => {
+                    navigate(item.path);
+                    setIsCommunitiesOpen(true);
+                  }}
+                  className="flex items-center gap-3.5 flex-1 cursor-pointer text-left"
+                >
                   <item.icon size={18} />
                   {item.name}
-                </div>
-                <ChevronDown size={16} className={`transition-transform duration-200 ${isCommunitiesOpen ? 'rotate-180' : ''}`} />
-              </button>
+                </button>
+                <button
+                  onClick={() => setIsCommunitiesOpen(!isCommunitiesOpen)}
+                  className="cursor-pointer p-1"
+                >
+                  <ChevronDown size={16} className={`transition-transform duration-200 ${isCommunitiesOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
             ) : (
               <NavLink
                 to={item.path}

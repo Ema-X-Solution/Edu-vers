@@ -43,6 +43,11 @@ const request = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
+  // Let fetch handle the Content-Type boundary for FormData automatically
+  if (options.body instanceof FormData) {
+    delete headers['Content-Type'];
+  }
+
   const response = await fetch(`${BASE_URL}${formattedEndpoint}`, {
     ...options,
     headers,
@@ -70,9 +75,9 @@ const request = async (endpoint, options = {}) => {
 
 const httpClient = {
   get:    (endpoint, options)       => request(endpoint, { ...options, method: 'GET' }),
-  post:   (endpoint, body, options) => request(endpoint, { ...options, method: 'POST',  body: JSON.stringify(body) }),
-  put:    (endpoint, body, options) => request(endpoint, { ...options, method: 'PUT',   body: JSON.stringify(body) }),
-  patch:  (endpoint, body, options) => request(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+  post:   (endpoint, body, options) => request(endpoint, { ...options, method: 'POST',  body: body instanceof FormData ? body : JSON.stringify(body) }),
+  put:    (endpoint, body, options) => request(endpoint, { ...options, method: 'PUT',   body: body instanceof FormData ? body : JSON.stringify(body) }),
+  patch:  (endpoint, body, options) => request(endpoint, { ...options, method: 'PATCH', body: body instanceof FormData ? body : JSON.stringify(body) }),
   delete: (endpoint, options)       => request(endpoint, { ...options, method: 'DELETE' }),
 };
 
