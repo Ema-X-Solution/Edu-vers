@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { MoreVertical, Edit2, Trash2, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Action cell for staff row.
@@ -7,6 +8,7 @@ import { MoreVertical, Edit2, Trash2 } from 'lucide-react';
 const StaffActionsCell = ({ staff, onEdit, onDelete }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -28,8 +30,15 @@ const StaffActionsCell = ({ staff, onEdit, onDelete }) => {
         <MoreVertical size={18} />
       </button>
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg z-50 border border-gray-100">
+        <div className="absolute right-0 mt-2 w-36 bg-white rounded-md shadow-lg z-50 border border-gray-100">
           <div className="py-1">
+            <button
+              onClick={() => { setIsOpen(false); navigate(`/users/profile/${staff._id || staff.id}`); }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+            >
+              <Eye size={14} className="mr-2" />
+              View Details
+            </button>
             <button
               onClick={() => { setIsOpen(false); onEdit?.(staff); }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"

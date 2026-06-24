@@ -120,27 +120,20 @@ const RatingModal = ({ isOpen, onClose, community }) => {
 };
 
 // ─── Student Community Card ───────────────────────────────────────────────────
-const StudentCommunityCard = ({ community, onRate }) => {
+const StudentCommunityCard = ({ community, onRate, onLeaveClick, onJoinSuccess }) => {
   const navigate = useNavigate();
-  const [isJoined, setIsJoined] = useState(community.isJoined || false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  const handleJoinToggle = async () => {
+  const handleJoin = async () => {
     if (isActionLoading) return;
     setIsActionLoading(true);
     try {
-      if (isJoined) {
-        await leaveCommunity(community._id);
-        setIsJoined(false);
-        toast.success(`Left ${community.name}`);
-      } else {
-        await joinCommunity(community._id);
-        setIsJoined(true);
-        toast.success(`Joined ${community.name}`);
-      }
+      await joinCommunity(community._id);
+      toast.success(`Joined ${community.name}`);
+      if (onJoinSuccess) onJoinSuccess();
     } catch (err) {
-      console.error('Failed to toggle join status:', err);
-      toast.error('Failed to update membership');
+      console.error('Failed to join:', err);
+      toast.error('Failed to join community');
     } finally {
       setIsActionLoading(false);
     }
@@ -207,29 +200,38 @@ const StudentCommunityCard = ({ community, onRate }) => {
 
           {/* Actions */}
           <div className="flex gap-3">
-            <button
-              onClick={() => onRate(community)}
-              className="h-10 px-3 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Star size={14} className="fill-yellow-500 text-yellow-500" />
-              Rate
-            </button>
-            <button
-              onClick={() => navigate(`/student-communities/${community._id}`)}
-              className="flex-1 h-10 rounded-xl border border-gray-200 text-dark-blue hover:bg-gray-50 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
-            >
-              Details
-            </button>
-            <button
-              onClick={handleJoinToggle}
-              disabled={isActionLoading}
-              className={`flex-1 h-10 rounded-xl text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-2
-                ${isJoined ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-blue-500 hover:bg-blue-600 text-white'}
-                ${isActionLoading ? 'opacity-70 cursor-wait' : ''}`}
-            >
-              {isActionLoading && <Loader2 size={14} className="animate-spin" />}
-              {isJoined ? 'Leave' : 'Join'}
-            </button>
+            {community.isMember ? (
+              <>
+                <button
+                  onClick={() => onRate(community)}
+                  className="h-10 px-3 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                  Rate
+                </button>
+                <button
+                  onClick={() => navigate(`/student-communities/${community._id}`)}
+                  className="flex-1 h-10 rounded-xl border border-gray-200 text-dark-blue hover:bg-gray-50 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => onLeaveClick(community)}
+                  className="flex-1 h-10 rounded-xl bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
+                >
+                  Leave
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleJoin}
+                disabled={isActionLoading}
+                className={`flex-1 h-10 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 ${isActionLoading ? 'opacity-70 cursor-wait' : ''}`}
+              >
+                {isActionLoading && <Loader2 size={14} className="animate-spin" />}
+                Join Community
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -246,6 +248,8 @@ const StudentCommunitiesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sliderActionLoading, setSliderActionLoading] = useState(false);
   const [ratingTarget, setRatingTarget] = useState(null);
+  const [leaveTarget, setLeaveTarget] = useState(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   // Auto-advance slider
   useEffect(() => {
@@ -281,20 +285,37 @@ const StudentCommunitiesPage = () => {
     return () => clearTimeout(timeout);
   }, [search]);
 
+  const handleConfirmLeave = async () => {
+    if (!leaveTarget) return;
+    setIsLeaving(true);
+    try {
+      await leaveCommunity(leaveTarget._id);
+      toast.success(`Left ${leaveTarget.name}`);
+      setCommunities(prev => prev.map(c => c._id === leaveTarget._id ? { ...c, isMember: false } : c));
+      setTopCommunities(prev => prev.map(c => c._id === leaveTarget._id ? { ...c, isMember: false } : c));
+      setLeaveTarget(null);
+    } catch (err) {
+      console.error('Failed to leave:', err);
+      toast.error('Failed to leave community');
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
   const handleSliderJoinToggle = async (community) => {
     if (sliderActionLoading) return;
     setSliderActionLoading(true);
     try {
-      if (community.isJoined) {
+      if (community.isMember) {
         await leaveCommunity(community._id);
         toast.success(`Left ${community.name}`);
-        setTopCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isJoined: false } : c));
-        setCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isJoined: false } : c));
+        setTopCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isMember: false } : c));
+        setCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isMember: false } : c));
       } else {
         await joinCommunity(community._id);
         toast.success(`Joined ${community.name}`);
-        setTopCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isJoined: true } : c));
-        setCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isJoined: true } : c));
+        setTopCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isMember: true } : c));
+        setCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isMember: true } : c));
       }
     } catch (err) {
       console.error('Failed to toggle join status:', err);
@@ -386,16 +407,33 @@ const StudentCommunitiesPage = () => {
                 {slide.description}
               </p>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handleSliderJoinToggle(slide)}
-                  disabled={sliderActionLoading}
-                  className={`px-6 py-2.5 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2
-                    ${slide.isJoined ? 'bg-gray-400 hover:bg-gray-500' : slideColor.btnColor}
-                    ${sliderActionLoading ? 'opacity-70 cursor-wait' : ''}`}
-                >
-                  {sliderActionLoading && <Loader2 size={14} className="animate-spin" />}
-                  {slide.isJoined ? 'Leave this community' : 'Join this community'}
-                </button>
+                {slide.isMember ? (
+                  <>
+                    <button
+                      onClick={() => navigate(`/student-communities/${slide._id}`)}
+                      className="px-6 py-2.5 text-dark-blue bg-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center hover:bg-gray-50"
+                    >
+                      View Community
+                    </button>
+                    <button
+                      onClick={() => setLeaveTarget(slide)}
+                      className="px-6 py-2.5 text-white bg-gray-400 hover:bg-gray-500 text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
+                    >
+                      Leave Community
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleSliderJoinToggle(slide)}
+                    disabled={sliderActionLoading}
+                    className={`px-6 py-2.5 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2
+                      ${slideColor.btnColor}
+                      ${sliderActionLoading ? 'opacity-70 cursor-wait' : ''}`}
+                  >
+                    {sliderActionLoading && <Loader2 size={14} className="animate-spin" />}
+                    Join this community
+                  </button>
+                )}
               </div>
             </div>
 
@@ -444,6 +482,11 @@ const StudentCommunitiesPage = () => {
               key={community._id}
               community={community}
               onRate={(c) => setRatingTarget(c)}
+              onLeaveClick={(c) => setLeaveTarget(c)}
+              onJoinSuccess={() => {
+                setCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isMember: true } : c));
+                setTopCommunities(prev => prev.map(c => c._id === community._id ? { ...c, isMember: true } : c));
+              }}
             />
           ))}
         </div>
@@ -454,6 +497,34 @@ const StudentCommunitiesPage = () => {
         onClose={() => setRatingTarget(null)}
         community={ratingTarget}
       />
+
+      <Modal isOpen={!!leaveTarget} onClose={() => setLeaveTarget(null)} title="Leave Community" size="sm">
+        <div className="flex flex-col items-center gap-4 py-4 text-center">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-2">
+            <Users size={32} className="text-red-500" />
+          </div>
+          <h3 className="text-lg font-bold text-dark-blue">Are you sure?</h3>
+          <p className="text-sm text-gray-500 max-w-xs">
+            Do you really want to leave <strong>{leaveTarget?.name}</strong>? You will lose access to its resources and discussions.
+          </p>
+          <div className="flex gap-3 w-full mt-4">
+            <button
+              onClick={() => setLeaveTarget(null)}
+              className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmLeave}
+              disabled={isLeaving}
+              className="flex-1 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLeaving && <Loader2 size={16} className="animate-spin" />}
+              Confirm Leave
+            </button>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 };

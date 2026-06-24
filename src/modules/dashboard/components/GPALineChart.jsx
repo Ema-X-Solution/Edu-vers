@@ -1,21 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/shared/ui';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const data = [
-  { name: 'start', gpa: 0 },
-  { name: 'semester 1', gpa: 3.1 },
-  { name: 'semester 2', gpa: 2.9 },
-  { name: 'semester 3', gpa: 2.7 },
-  { name: 'semester 4', gpa: 3.0 },
-  { name: 'semester 5', gpa: 2.5 },
-  { name: 'semester 6', gpa: 2.2 },
-  { name: 'semester 7', gpa: 2.7 },
-  { name: 'semester 8', gpa: 3.2 },
-];
+const GPALineChart = ({ history = [] }) => {
+  const [filter, setFilter] = useState('All');
 
-const GPALineChart = () => {
-  const [filter, setFilter] = useState('First year');
+  const chartData = useMemo(() => {
+    if (!history || history.length === 0) return [{ name: 'Start', gpa: 0 }];
+    return history.map(item => ({
+      name: `Year ${item.academicYear}`,
+      gpa: item.cumulativeGpa
+    }));
+  }, [history]);
 
   return (
     <Card className="col-span-2 p-6 flex flex-col h-full">
@@ -26,16 +22,13 @@ const GPALineChart = () => {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         >
-          <option value="First year">First year</option>
-          <option value="Second year">Second year</option>
-          <option value="Third year">Third year</option>
-          <option value="Fourth year">Fourth year</option>
+          <option value="All">All Years</option>
         </select>
       </div>
 
       <div className="flex-1 w-full min-h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
             <XAxis 
               dataKey="name" 

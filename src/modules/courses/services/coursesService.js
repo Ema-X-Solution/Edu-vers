@@ -50,3 +50,40 @@ export const updateCourse = async (id, payload) => {
 export const deleteCourse = async (id) => {
   return await httpClient.delete(`/courses/${id}`);
 };
+
+/**
+ * Fetch available courses for a student in a specific semester.
+ * @param {string} semester 
+ */
+export const fetchAvailableCourses = async (semester) => {
+  return await httpClient.get(`/Enrollments/available-courses?semester=${semester}`);
+};
+
+/**
+ * Confirm registration for a list of courses.
+ * @param {string[]} courseIds
+ * @param {string} semester 
+ */
+export const confirmRegistration = async (courseIds, semester) => {
+  return await httpClient.post('/Enrollments/confirm', {
+    courseId: courseIds,
+    semester: semester
+  });
+};
+
+/**
+ * Fetch student schedule.
+ * @param {string} semester 
+ */
+export const getMySchedule = async (semester) => {
+  return await httpClient.get(`/Enrollments/my-schedule?semester=${semester}`);
+};
+
+/**
+ * Fetch student registration cards (stats + openRegister flag).
+ * Endpoint: GET /Enrollments/student-status/:studentId
+ * @param {string} studentId
+ */
+export const fetchStudentRegistrationCards = async (studentId) => {
+  return await httpClient.get(`/Enrollments/student-status/${studentId}`);
+};

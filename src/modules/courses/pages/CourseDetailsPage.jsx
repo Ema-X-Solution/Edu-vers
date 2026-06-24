@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/app/layouts';
-import { Loader, Card, Button } from '@/shared/ui';
+import { Loader, Card } from '@/shared/ui';
 import { fetchCourseById } from '../services/coursesService';
 import { Book, Code, GraduationCap, Hash, User, ArrowLeft } from 'lucide-react';
-import { ROUTES } from '@/shared/constants';
 
 const CourseDetailsPage = () => {
   const { id } = useParams();
@@ -28,7 +27,7 @@ const CourseDetailsPage = () => {
     <DashboardLayout>
       <div className="mb-6 flex items-center gap-4">
         <button 
-          onClick={() => navigate(ROUTES.COURSES)}
+          onClick={() => navigate(-1)}
           className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-dark-blue hover:border-dark-blue transition-colors cursor-pointer"
         >
           <ArrowLeft size={20} />
@@ -65,15 +64,15 @@ const CourseDetailsPage = () => {
                 </span>
               </div>
               
-              {course.professor && (
+              {(course.professorName || course.professor) && (
                 <div className="mt-6 pt-5 border-t border-[#0D9488]/10 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-main/10 flex items-center justify-center">
                     <User size={20} className="text-main" />
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Assigned Professor</p>
-                    <p className="font-bold text-dark-blue">{course.professor.name}</p>
-                    <p className="text-sm text-gray-500">{course.professor.email}</p>
+                    <p className="font-bold text-dark-blue">{course.professorName || course.professor?.name}</p>
+                    {course.professor?.email && <p className="text-sm text-gray-500">{course.professor.email}</p>}
                   </div>
                 </div>
               )}

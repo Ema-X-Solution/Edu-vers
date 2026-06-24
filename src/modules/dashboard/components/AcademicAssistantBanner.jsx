@@ -12,7 +12,7 @@ const AcademicAssistantBanner = () => {
         className="p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setIsDrawerOpen(true)}
       >
-        <div className="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 rounded-full bg-[#2563EB] text-white flex items-center justify-center shrink-0">
           <Bot size={24} />
         </div>
         <div>

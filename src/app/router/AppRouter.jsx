@@ -14,6 +14,7 @@ const ResetPasswordPage   = lazy(() => import('@/modules/auth/pages/ResetPasswor
 const DashboardPage       = lazy(() => import('@/modules/dashboard/pages/DashboardPage'));
 const StudentDashboardPage = lazy(() => import('@/modules/dashboard/pages/StudentDashboardPage'));
 const ProfDashboardPage    = lazy(() => import('@/modules/dashboard/pages/ProfDashboardPage'));
+const ProfGradesPage       = lazy(() => import('@/modules/dashboard/pages/ProfGradesPage'));
 const StudentsPage        = lazy(() => import('@/modules/students/pages/StudentsPage'));
 const StaffPage           = lazy(() => import('@/modules/staff/pages/StaffPage'));
 const CoursesPage         = lazy(() => import('@/modules/courses/pages/CoursesPage'));
@@ -23,6 +24,7 @@ const CourseDetailsPage   = lazy(() => import('@/modules/courses/pages/CourseDet
 const CommunitiesPage     = lazy(() => import('@/modules/communities/pages/CommunitiesPage'));
 const StudentCommunitiesPage = lazy(() => import('@/modules/communities/pages/StudentCommunitiesPage'));
 const CommunityDetailsPage = lazy(() => import('@/modules/communities/pages/CommunityDetailsPage'));
+const UserProfilePage      = lazy(() => import('@/modules/users/pages/UserProfilePage'));
 
 /** Full-page loading fallback shown during lazy chunk fetch */
 const PageLoader = () => (
@@ -47,6 +49,7 @@ const AppRouter = () => (
       <Route path={ROUTES.DASHBOARD}  element={<DashboardPage />} />
       <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboardPage />} />
       <Route path={ROUTES.PROF_DASHBOARD} element={<ProfDashboardPage />} />
+      <Route path="/prof-grades" element={<ProfGradesPage />} />
 
       {/* Students, Staff & Courses */}
       <Route path={ROUTES.STUDENTS}   element={<StudentsPage />} />
@@ -56,10 +59,12 @@ const AppRouter = () => (
       <Route path={ROUTES.COURSE_CREATE}   element={<CreateCoursePage />} />
       <Route path={`${ROUTES.COURSE_EDIT}/:id`} element={<CreateCoursePage />} />
       <Route path={`${ROUTES.COURSES}/:id`}     element={<CourseDetailsPage />} />
+      <Route path={`${ROUTES.STUDENT_COURSES}/:id`} element={<CourseDetailsPage />} />
       <Route path={ROUTES.COMMUNITIES}            element={<CommunitiesPage />} />
       <Route path="/student-communities"          element={<StudentCommunitiesPage />} />
       <Route path="/communities/:clubId"          element={<CommunityDetailsPage />} />
       <Route path="/student-communities/:clubId"  element={<CommunityDetailsPage />} />
+      <Route path="/users/profile/:id"            element={<UserProfilePage />} />
 
       {/* Fallback — redirect unknown paths to login or dashboard */}
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />

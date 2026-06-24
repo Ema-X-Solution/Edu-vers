@@ -53,13 +53,18 @@ const CreateCoursePage = () => {
   // Prefill form if editing
   useEffect(() => {
     if (initialData) {
-      Object.keys(initialData).forEach(key => {
-        if (key === 'professor' && initialData.professor?.email) {
-          setValue('professorEmail', initialData.professor.email);
-        } else {
+      const allowedKeys = ['name', 'code', 'description', 'creditHours', 'academicYear', 'semester', 'isTraining'];
+      allowedKeys.forEach(key => {
+        if (initialData[key] !== undefined) {
           setValue(key, initialData[key]);
         }
       });
+      
+      if (initialData.professor?.email) {
+        setValue('professorEmail', initialData.professor.email);
+      } else if (initialData.professorEmail) {
+        setValue('professorEmail', initialData.professorEmail);
+      }
     }
   }, [initialData, setValue]);
 

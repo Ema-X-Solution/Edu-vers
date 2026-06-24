@@ -21,7 +21,9 @@ import {
   pinClubPost,
   unpinClubPost,
   getPostComments,
-  deleteCommentFromPost
+  deleteCommentFromPost,
+  fetchPostDetails,
+  fetchClubMembers
 } from '../services/communitiesService';
 
 // ─── Shared Tag Config ────────────────────────────────────────────────────────
@@ -325,12 +327,13 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
     return () => document.removeEventListener('click', handleOutsideClick);
   }, [showMenu]);
 
-  const authorName = post.authorName || post.userId?.name || post.author?.name || 'Unknown Author';
-  const authorRole = post.authorRole || post.userId?.role || post.author?.role || (authorName.includes('Admin') ? 'Admin' : 'Member');
+  const authorName = post.authorFirstName || post.authorName || post.userId?.name || post.author?.name || 'Unknown';
+  const authorRole = post.authorRole || post.userId?.role || post.author?.role || 'Member';
   const authorInitials = authorName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const isAuthor = currentUser?.userId === post.authorId || currentUser?._id === post.authorId || currentUser?.userId === post.userId?._id || currentUser?.userId === post.userId;
-  const canManage = isAuthor || isAdmin || currentUser?.userRole?.toLowerCase() === 'admin';
+  const canEdit = isAuthor; // Only the author can edit their own post
+  const canDelete = isAuthor || isAdmin || currentUser?.userRole?.toLowerCase() === 'admin'; // Admin can delete
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -385,12 +388,25 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
     setIsCommenting(true);
     try {
       const res = await addCommentToPost(post._id, commentContent);
-      const newComment = res?.data || res || {
-        _id: Math.random().toString(),
-        content: commentContent,
-        createdAt: new Date().toISOString(),
-        userId: { name: currentUser?.fullName || 'Me' }
-      };
+      let newComment = res?.data || res?.comment || res || {};
+
+      // If backend doesn't populate the author's name immediately, inject it from currentUser
+      if (!newComment.authorName && !newComment.authorId?.fullName && !newComment.userId?.name && currentUser) {
+        newComment = {
+          ...newComment,
+          authorName: currentUser.fullName || currentUser.name || 'Me',
+          _id: newComment._id || Math.random().toString(),
+          createdAt: newComment.createdAt || new Date().toISOString(),
+          content: commentContent
+        };
+      } else if (!newComment._id) {
+        newComment = {
+          _id: Math.random().toString(),
+          content: commentContent,
+          createdAt: new Date().toISOString(),
+          authorName: currentUser?.fullName || 'Me'
+        };
+      }
 
       setComments(prev => [...prev, newComment]);
       setCommentContent('');
@@ -431,7 +447,7 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
         </div>
 
         {/* Dropdown Menu for Edit/Delete */}
-        {canManage && (
+        {(canEdit || canDelete) && (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={(e) => {
@@ -445,15 +461,17 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
 
             {showMenu && (
               <div className="absolute right-0 mt-1 w-32 bg-white rounded-xl border border-gray-100 shadow-lg py-1 z-10 animate-in fade-in slide-in-from-top-2 duration-150">
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onPostUpdated(post);
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-[#0D9488] transition-colors flex items-center gap-2 cursor-pointer"
-                >
-                  <Edit2 size={13} /> Edit
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      onPostUpdated(post);
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-[#0D9488] transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <Edit2 size={13} /> Edit
+                  </button>
+                )}
                 {isAdmin && (
                   <button
                     onClick={() => {
@@ -469,26 +487,26 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
                     )}
                   </button>
                 )}
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onPostDeleted(post);
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 cursor-pointer"
-                >
-                  <Trash2 size={13} /> Delete
-                </button>
+                {canDelete && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      onPostDeleted(post);
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+                )}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Content */}
+      {/* Content with See More */}
       <div className="space-y-3">
-        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-          {post.content}
-        </p>
+        <ExpandableContent content={post.content} />
         {(post.mediaUrl || post.image) && (
           <img
             src={post.mediaUrl || post.image}
@@ -591,35 +609,21 @@ const PostCard = ({ post, onPostDeleted, onPostUpdated, onPostPinned, onImageCli
 // ─── Edit Post Modal ──────────────────────────────────────────────────────────
 const EditPostModal = ({ isOpen, post, onClose, onSave }) => {
   const [content, setContent] = useState('');
-  const [file, setFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && post) {
       setContent(post.content || '');
-      setFile(null);
-      setFilePreview(post.mediaUrl || post.image || null);
     }
   }, [isOpen, post]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() && !filePreview && !file) return;
+    if (!content.trim()) return;
 
     setIsSaving(true);
     try {
-      let payload;
-      if (file) {
-        payload = new FormData();
-        payload.append('content', content);
-        payload.append('file', file);
-      } else {
-        payload = { content };
-      }
-
-      await updateClubPost(post._id, payload);
+      await updateClubPost(post._id, { content });
       toast.success('Post updated!');
       if (onSave) onSave();
       onClose();
@@ -639,53 +643,11 @@ const EditPostModal = ({ isOpen, post, onClose, onSave }) => {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm text-dark-blue placeholder:text-gray-400 outline-none focus:border-[#0D9488]"
+            rows={5}
+            autoFocus
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-dark-blue placeholder:text-gray-400 outline-none focus:border-[#0D9488] resize-none"
             placeholder="Edit your post content..."
           />
-        </div>
-
-        {/* Image Preview / Edit */}
-        <div>
-           <label className="block text-xs font-bold text-dark-blue mb-2">Image Attachment (Optional)</label>
-           {filePreview ? (
-             <div className="relative inline-block border border-gray-200 rounded-xl overflow-hidden group">
-               <img src={filePreview} alt="Preview" className="h-24 w-auto object-cover" />
-               <button
-                 type="button"
-                 onClick={() => {
-                   setFile(null);
-                   setFilePreview(null);
-                   if (fileInputRef.current) fileInputRef.current.value = '';
-                 }}
-                 className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-               >
-                 <X size={14} />
-               </button>
-             </div>
-           ) : (
-             <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:border-[#0D9488] hover:text-[#0D9488] transition-colors cursor-pointer"
-             >
-                <Image size={24} className="mb-1" />
-                <span className="text-xs font-semibold">Upload Image</span>
-             </button>
-           )}
-           <input
-             type="file"
-             ref={fileInputRef}
-             className="hidden"
-             accept="image/*"
-             onChange={(e) => {
-               const f = e.target.files?.[0];
-               if (f) {
-                 setFile(f);
-                 setFilePreview(URL.createObjectURL(f));
-               }
-             }}
-           />
         </div>
 
         <div className="flex gap-3">
@@ -698,9 +660,10 @@ const EditPostModal = ({ isOpen, post, onClose, onSave }) => {
           </button>
           <button
             type="submit"
-            disabled={isSaving || (!content.trim() && !filePreview)}
-            className="flex-1 h-10 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center"
+            disabled={isSaving || !content.trim()}
+            className="flex-1 h-10 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] text-white text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
+            {isSaving && <Loader2 size={14} className="animate-spin" />}
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -709,59 +672,209 @@ const EditPostModal = ({ isOpen, post, onClose, onSave }) => {
   );
 };
 
-// ─── Post Detail Modal ────────────────────────────────────────────────────────
-const PostDetailModal = ({ post, onClose }) => {
-  if (!post) return null;
-  const authorName = post.userId?.name || post.author?.name || 'Unknown Author';
-  const authorInitials = authorName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const content = post.content || post.text || post.body || '';
-  const createdAt = post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  }) : '';
+// ─── Expandable Content ──────────────────────────────────────────────────────
+const CONTENT_LIMIT = 100;
+const ExpandableContent = ({ content = '', fullText = false }) => {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = content.length > CONTENT_LIMIT;
+
+  if (fullText || !isLong) {
+    return (
+      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{content}</p>
+    );
+  }
 
   return (
-    <Modal isOpen={!!post} onClose={onClose} title="Pinned Post" size="md">
-      <div className="space-y-4">
-        {/* Author */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0D9488] to-[#0F766E] flex items-center justify-center text-white text-sm font-bold shrink-0">
-            {authorInitials}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-dark-blue">{authorName}</p>
-            {createdAt && <p className="text-xs text-gray-400">{createdAt}</p>}
-          </div>
-          <span className="ml-auto flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
-            <Pin size={11} /> Pinned
-          </span>
-        </div>
+    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+      {expanded ? content : `${content.slice(0, CONTENT_LIMIT)}...`}
+      {' '}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="text-[#0D9488] font-bold text-xs hover:underline cursor-pointer"
+      >
+        {expanded ? 'See less' : 'See more'}
+      </button>
+    </p>
+  );
+};
 
-        {/* Content */}
-        <div className="bg-gray-50 rounded-xl p-4">
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-            {content || 'No content available.'}
-          </p>
-        </div>
+// ─── Post Detail Modal ────────────────────────────────────────────────────────
+const PostDetailModal = ({ postId, onClose, isAdmin }) => {
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentContent, setCommentContent] = useState('');
+  const [isCommenting, setIsCommenting] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
-        {/* Image if any */}
-        {post.image && (
-          <img
-            src={post.image}
-            alt="Post"
-            className="w-full rounded-xl object-cover max-h-64"
-          />
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('user_info');
+      if (stored) setCurrentUser(JSON.parse(stored));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (postId) {
+      const loadPost = async () => {
+        setLoading(true);
+        setComments([]);
+        try {
+          const res = await fetchPostDetails(postId);
+          setPost(res?.data?.post || res?.data || res);
+        } catch (err) {
+          console.error(err);
+          toast.error('Failed to load post details');
+          onClose();
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadPost();
+    } else {
+      setPost(null);
+      setComments([]);
+    }
+  }, [postId, onClose]);
+
+  // Load comments when post is loaded
+  useEffect(() => {
+    if (!post?._id) return;
+    const loadComments = async () => {
+      setCommentsLoading(true);
+      try {
+        const res = await getPostComments(post._id);
+        const data = res?.data || res;
+        const list = Array.isArray(data) ? data : data?.comments || data?.data || [];
+        setComments(list);
+      } catch {}
+      finally { setCommentsLoading(false); }
+    };
+    loadComments();
+  }, [post?._id]);
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentContent.trim()) return;
+    setIsCommenting(true);
+    try {
+      const res = await addCommentToPost(post._id, commentContent);
+      let newComment = res?.data || res?.comment || res || {};
+      if (!newComment.authorName && !newComment.authorId?.fullName && !newComment.userId?.name && currentUser) {
+        newComment = { ...newComment, authorName: currentUser.fullName || 'Me', _id: newComment._id || Math.random().toString(), createdAt: newComment.createdAt || new Date().toISOString(), content: commentContent };
+      } else if (!newComment._id) {
+        newComment = { _id: Math.random().toString(), content: commentContent, createdAt: new Date().toISOString(), authorName: currentUser?.fullName || 'Me' };
+      }
+      setComments(prev => [...prev, newComment]);
+      setCommentContent('');
+    } catch (err) {
+      toast.error('Failed to add comment');
+    } finally { setIsCommenting(false); }
+  };
+
+  if (!postId) return null;
+
+  const authorName = post?.authorFirstName || post?.authorName || post?.userId?.name || 'Unknown';
+  const authorInitials = authorName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
+    <Modal isOpen={!!postId} onClose={onClose} title="Post Details" size="2xl">
+      <div className="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-1">
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 size={32} className="animate-spin text-[#0D9488]" />
+          </div>
+        ) : post ? (
+          <>
+            {/* Author row */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0D9488] to-[#0F766E] flex items-center justify-center text-white text-sm font-black shrink-0">
+                {authorInitials}
+              </div>
+              <div>
+                <p className="text-sm font-extrabold text-dark-blue">{authorName}</p>
+                <p className="text-[11px] text-gray-400 font-semibold">{timeAgo(post.createdAt)}</p>
+              </div>
+            </div>
+
+            {/* Full content — no truncation */}
+            <ExpandableContent content={post.content || ''} fullText />
+
+            {/* Media */}
+            {(post.mediaUrl || post.image) && (
+              <img
+                src={post.mediaUrl || post.image}
+                alt="Post media"
+                className="w-full rounded-2xl border border-gray-100 object-cover max-h-[50vh] cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setFullscreenImage(post.mediaUrl || post.image)}
+              />
+            )}
+
+            {/* Stats */}
+            <div className="flex items-center gap-5 text-xs font-bold text-gray-500 border-t border-gray-100 pt-3">
+              <span className="flex items-center gap-1.5"><Heart size={14} className="text-rose-400" /> {post.likesCount || 0}</span>
+              <span className="flex items-center gap-1.5"><MessageSquare size={14} className="text-blue-400" /> {comments.length || post.commentsCount || 0}</span>
+            </div>
+
+            {/* Comments */}
+            <div className="space-y-3">
+              {commentsLoading ? (
+                <div className="flex justify-center py-3"><Loader2 size={16} className="animate-spin text-gray-400" /></div>
+              ) : comments.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {comments.map((comment, idx) => {
+                    const cName = comment.authorFirstName || comment.authorId?.fullName || comment.authorName || comment.userId?.name || 'User';
+                    const cInitials = cName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <div key={comment._id || idx} className="flex items-start gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">{cInitials}</div>
+                        <div className="bg-gray-50 rounded-2xl px-3 py-2 flex-1">
+                          <p className="text-xs font-bold text-dark-blue">{cName}</p>
+                          <p className="text-xs text-gray-600 mt-0.5">{comment.content}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 text-center py-2">No comments yet.</p>
+              )}
+
+              {/* Comment input */}
+              <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                <input
+                  type="text"
+                  value={commentContent}
+                  onChange={e => setCommentContent(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-xs text-dark-blue placeholder:text-gray-400 outline-none focus:border-[#0D9488] bg-gray-50/50"
+                />
+                <button
+                  type="submit"
+                  disabled={isCommenting || !commentContent.trim()}
+                  className="w-8 h-8 rounded-full bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {isCommenting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} className="ml-0.5" />}
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-10 text-gray-400">Post not found.</div>
         )}
-
-        {/* Footer */}
-        <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
-          <span className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
-            <Heart size={13} /> {post.likesCount || post.likes || 0} Likes
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
-            <MessageSquare size={13} /> {post.commentsCount || post.comments || 0} Comments
-          </span>
-        </div>
       </div>
+
+      {/* Fullscreen image inside modal */}
+      {fullscreenImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <img src={fullscreenImage} alt="Fullscreen" className="max-w-full max-h-full rounded-xl object-contain" />
+        </div>
+      )}
     </Modal>
   );
 };
@@ -824,8 +937,84 @@ const RulesCard = () => (
   </div>
 );
 
+// ─── Members Modal ───────────────────────────────────────────────────────────
+const MembersModal = ({ isOpen, onClose, clubId }) => {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !clubId) return;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetchClubMembers(clubId);
+        const data = res?.data?.members || res?.data || res || [];
+        setMembers(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load members:', err);
+        setMembers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [isOpen, clubId]);
+
+  const getInitials = (name = '') => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Community Members" size="md">
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 size={28} className="animate-spin text-[#0D9488]" />
+        </div>
+      ) : members.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <Users size={36} className="opacity-20 mb-3" />
+          <p className="text-sm font-semibold">No members found</p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+          {members.map((member, idx) => {
+            const name = member.studentId?.fullName || member.fullName || member.name || 'Member';
+            const role = member.role || 'Member';
+            const initials = getInitials(name);
+            const avatarColors = [
+              'from-teal-400 to-teal-600',
+              'from-blue-400 to-blue-600',
+              'from-purple-400 to-purple-600',
+              'from-orange-400 to-orange-600',
+              'from-pink-400 to-pink-600',
+              'from-indigo-400 to-indigo-600',
+            ];
+            const color = avatarColors[idx % avatarColors.length];
+            return (
+              <div key={member._id || idx} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white text-sm font-black shrink-0 shadow-sm`}>
+                  {member.profileImage ? (
+                    <img src={member.profileImage} alt={name} className="w-full h-full object-cover rounded-full" />
+                  ) : initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-dark-blue truncate">{name}</p>
+                  <p className="text-xs text-gray-400 font-semibold truncate capitalize">{role}</p>
+                </div>
+                {(member.isAdmin || member.role === 'admin') && (
+                  <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                    Admin
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Modal>
+  );
+};
+
 // ─── Club Info Card ───────────────────────────────────────────────────────────
-const ClubInfoCard = ({ club, isLoading }) => {
+const ClubInfoCard = ({ club, isLoading, onMembersClick }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex items-center justify-center min-h-[180px]">
@@ -836,7 +1025,18 @@ const ClubInfoCard = ({ club, isLoading }) => {
   if (!club) return null;
 
   const tags = club.tags || [];
+  const membersCount = club.membersCount || 0;
   const gradientStyle = getTagGradientStyle(tags);
+
+  // Generate fake avatar colors for the preview circles
+  const avatarColors = [
+    'from-teal-400 to-teal-600',
+    'from-blue-400 to-blue-600',
+    'from-purple-400 to-purple-600',
+    'from-orange-400 to-orange-600',
+  ];
+  const previewCount = Math.min(4, membersCount);
+  const extraCount = membersCount - previewCount;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -880,9 +1080,37 @@ const ClubInfoCard = ({ club, isLoading }) => {
         )}
 
         {/* Members */}
-        <div className="flex items-center gap-2 pt-1 border-t border-gray-50">
-          <Users size={13} className="text-gray-400" />
-          <span className="text-xs font-bold text-gray-500">{club.membersCount || 0} Members</span>
+        <div className="pt-1 border-t border-gray-50 space-y-2">
+          <div className="flex items-center gap-2">
+            <Users size={13} className="text-gray-400" />
+            <span className="text-xs font-bold text-gray-500">{membersCount} Members</span>
+          </div>
+
+          {/* Avatar preview circles */}
+          {membersCount > 0 && (
+            <button
+              onClick={onMembersClick}
+              className="flex items-center gap-2 group cursor-pointer"
+              title="View all members"
+            >
+              <div className="flex -space-x-2.5">
+                {Array.from({ length: previewCount }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarColors[i % avatarColors.length]} border-2 border-white shadow-sm flex items-center justify-center text-white text-[10px] font-black ring-1 ring-white`}
+                  />
+                ))}
+                {extraCount > 0 && (
+                  <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white shadow-sm flex items-center justify-center text-gray-500 text-[10px] font-black ring-1 ring-white">
+                    +{extraCount}
+                  </div>
+                )}
+              </div>
+              <span className="text-[11px] font-bold text-gray-400 group-hover:text-[#0D9488] transition-colors">
+                View all
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -934,7 +1162,7 @@ const CommunityDetailsPage = () => {
   const [clubLoading, setClubLoading] = useState(true);
   const [pinnedPosts, setPinnedPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState(null);
+  const [selectedPostId, setSelectedPostId] = useState(null);
 
   // Main Posts Feed State
   const [clubPosts, setClubPosts] = useState([]);
@@ -944,6 +1172,13 @@ const CommunityDetailsPage = () => {
   const [isDeletingPost, setIsDeletingPost] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);
+  
+  // New State for Members Modal
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+
+  // Ref to hold latest posts for silent comparison during polling
+  const clubPostsRef = useRef([]);
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -986,7 +1221,9 @@ const CommunityDetailsPage = () => {
     try {
       const res = await fetchClubPosts(clubId);
       const list = res?.data?.posts || res?.data || res || [];
-      setClubPosts(Array.isArray(list) ? list : []);
+      const posts = Array.isArray(list) ? list : [];
+      clubPostsRef.current = posts;
+      setClubPosts(posts);
     } catch (err) {
       console.error('Failed to load club posts:', err);
       // Fallback to MOCK_POSTS
@@ -1007,11 +1244,50 @@ const CommunityDetailsPage = () => {
     try {
       const res = await fetchClubPosts(clubId);
       const list = res?.data?.posts || res?.data || res || [];
-      setClubPosts(Array.isArray(list) ? list : []);
+      const newPosts = Array.isArray(list) ? list : [];
+      clubPostsRef.current = newPosts;
+      setClubPosts(newPosts);
     } catch (err) {
       console.error('Failed to refresh club posts:', err);
     }
   };
+
+  // ─── Silent background polling ────────────────────────────────────────────
+  // Fetches posts every 30s; only updates state if something actually changed.
+  // No loading spinner — completely invisible to the user.
+  const silentPollPosts = async () => {
+    try {
+      const res = await fetchClubPosts(clubId);
+      const list = res?.data?.posts || res?.data || res || [];
+      const newPosts = Array.isArray(list) ? list : [];
+
+      const current = clubPostsRef.current;
+
+      // Build a simple fingerprint: join of "id:updatedAt" for each post
+      const fingerprint = (arr) =>
+        arr.map(p => `${p._id}:${p.updatedAt}:${p.likesCount}:${p.commentsCount}`).join('|');
+
+      if (fingerprint(newPosts) !== fingerprint(current)) {
+        clubPostsRef.current = newPosts;
+        setClubPosts(newPosts);
+      }
+    } catch (err) {
+      // Fail silently — don't toast or log noise in production
+      console.debug('Silent poll failed:', err?.message);
+    }
+  };
+
+  // Start/stop polling when clubId changes or component unmounts
+  useEffect(() => {
+    if (!clubId) return;
+
+    // Start polling after initial load (30s interval)
+    pollIntervalRef.current = setInterval(silentPollPosts, 30_000);
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [clubId]);
 
   const confirmDeletePost = async () => {
     if (!deletePostTarget) return;
@@ -1116,30 +1392,22 @@ const CommunityDetailsPage = () => {
         {/* ─── Right column: Rules + Club Info + Pinned Posts ─── */}
         <div className="w-full lg:w-72 lg:shrink-0 space-y-4 order-1 lg:order-2">
           <RulesCard />
-          <ClubInfoCard club={club} isLoading={clubLoading} />
+          <ClubInfoCard club={club} isLoading={clubLoading} onMembersClick={() => setIsMembersModalOpen(true)} />
           <PinnedPostsCard
             posts={pinnedPosts}
             isLoading={postsLoading}
             onPostClick={(pinnedPost) => {
-              const fullPost = clubPosts.find(p => p._id === pinnedPost.postId);
-              if (fullPost) {
-                setSelectedPost(fullPost);
-              } else {
-                setSelectedPost({
-                  _id: pinnedPost.postId,
-                  content: pinnedPost.preview,
-                  mediaUrl: typeof pinnedPost.hasImage === 'string' ? pinnedPost.hasImage : null,
-                  createdAt: pinnedPost.pinnedAt,
-                  authorName: 'Pinned Post'
-                });
-              }
+              setSelectedPostId(pinnedPost.postId || pinnedPost._id);
             }}
           />
         </div>
       </div>
 
       {/* Post Detail Popup */}
-      <PostDetailModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+      <PostDetailModal postId={selectedPostId} onClose={() => setSelectedPostId(null)} isAdmin={isAdmin} />
+
+      {/* Members Modal */}
+      <MembersModal isOpen={isMembersModalOpen} onClose={() => setIsMembersModalOpen(false)} clubId={clubId} />
 
       {/* Edit Post Modal */}
       <EditPostModal

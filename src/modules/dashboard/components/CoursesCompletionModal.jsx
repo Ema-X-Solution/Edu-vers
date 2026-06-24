@@ -1,27 +1,11 @@
 import React from 'react';
 import { Modal } from '@/shared/ui';
 
-// Mock expanded data to show scrolling in the modal
-const allCourses = [
-  { name: 'Introduction to computer science', grade: 96, color: 'bg-teal-500' },
-  { name: 'Data Mining', grade: 85, color: 'bg-orange-500' },
-  { name: 'Physics M107', grade: 80, color: 'bg-indigo-900' },
-  { name: 'Machine Learning', grade: 76, color: 'bg-purple-500' },
-  { name: 'Introduction to computer science', grade: 96, color: 'bg-teal-500' },
-  { name: 'Data Mining', grade: 85, color: 'bg-orange-500' },
-  { name: 'Physics M107', grade: 80, color: 'bg-indigo-900' },
-  { name: 'Machine Learning', grade: 76, color: 'bg-purple-500' },
-  { name: 'Introduction to computer science', grade: 96, color: 'bg-teal-500' },
-  { name: 'Data Mining', grade: 85, color: 'bg-orange-500' },
-  { name: 'Physics M107', grade: 80, color: 'bg-indigo-900' },
-  { name: 'Physics M107', grade: 80, color: 'bg-indigo-900' },
-];
-
-const CoursesCompletionModal = ({ isOpen, onClose }) => {
+const CoursesCompletionModal = ({ isOpen, onClose, courses = [] }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Courses completion" size="md">
-      <div className="flex flex-col gap-5">
-        {allCourses.map((course, idx) => (
+      <div className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
+        {courses.map((course, idx) => (
           <div key={idx}>
             <div className="flex justify-between text-xs font-bold mb-1.5">
               <span className="text-dark-blue">{course.name}</span>

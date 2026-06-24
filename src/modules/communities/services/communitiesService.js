@@ -75,9 +75,17 @@ export const joinCommunity = async (clubId) => {
 };
 
 export const leaveCommunity = async (clubId) => {
-  return await httpClient.get(`/community/clubs/${clubId}/leave`);
+  return await httpClient.delete(`/community/clubs/${clubId}/leave`);
 };
 
 export const rateCommunity = async (clubId, payload) => {
   return await httpClient.post(`/community/${clubId}/rate`, payload);
+};
+
+export const fetchPostDetails = async (postId) => {
+  return await httpClient.get(`/community/posts/${postId}`);
+};
+
+export const fetchClubMembers = async (clubId) => {
+  return await httpClient.get(`/community/clubs/${clubId}/members`);
 };

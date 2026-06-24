@@ -11,13 +11,23 @@ import httpClient from '@/shared/services/httpClient';
  * @returns {Promise<{ data: object[], total: number }>}
  */
 export const fetchStudents = async ({ search = '', status = '', page = 1, pageSize = 5 } = {}) => {
+  if (search) {
+    const query = new URLSearchParams({ q: search, page, limit: pageSize });
+    if (status) query.append('status', status);
+    const response = await httpClient.get(`/users/search-students?${query.toString()}`);
+    if (Array.isArray(response)) return { data: response, total: response.length };
+    return {
+      data: response.data || response.users || response,
+      total: response.total || response.count || (response.data?.length ?? 0)
+    };
+  }
+
   const query = new URLSearchParams({
     role: 'Student',
     page,
     limit: pageSize
   });
 
-  if (search) query.append('search', search);
   if (status) query.append('status', status);
 
   const response = await httpClient.get(`/users?${query.toString()}`);
