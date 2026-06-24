@@ -14,10 +14,21 @@ const AddTaskModal = ({ isOpen, onClose, courses }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  // Matches backend AssessmentTypeEnum
+  const ASSESSMENT_TYPES = [
+    { value: 'assignment1', label: 'Assignment 1' },
+    { value: 'assignment2', label: 'Assignment 2' },
+    { value: 'midterm',     label: 'Midterm Exam'  },
+    { value: 'final',       label: 'Final Exam'    },
+    { value: 'practical',   label: 'Practical'     },
+  ];
+
+  const validCourses = Array.isArray(courses) ? courses : [];
+
   // Reset state when opening/closing
   React.useEffect(() => {
     if (isOpen) {
-      setCourseId(courses?.[0]?._id || courses?.[0]?.courseId || '');
+      setCourseId(courses?.[0]?.id || courses?.[0]?.courseId || courses?.[0]?._id || '');
       setType('');
       setName('');
       setDeadline('');
@@ -98,9 +109,9 @@ const AddTaskModal = ({ isOpen, onClose, courses }) => {
                     required
                   >
                     <option value="" disabled>Select a course</option>
-                    {courses.map(c => (
-                      <option key={c._id || c.courseId} value={c._id || c.courseId}>
-                        {c.courseName} ({c.code})
+                    {validCourses.map(c => (
+                      <option key={c.id || c.courseId || c._id} value={c.id || c.courseId || c._id}>
+                        {c.name || c.courseName} ({c.code || c.courseCode})
                       </option>
                     ))}
                   </select>
@@ -121,13 +132,20 @@ const AddTaskModal = ({ isOpen, onClose, courses }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Task Type</label>
-                  <Input 
-                    placeholder="e.g. assignment2"
-                    icon={Type}
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <select 
+                      value={type}
+                      onChange={(e) => setType(e.target.value)}
+                      className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0D9488]/20 focus:border-[#0D9488] transition-all text-sm font-medium outline-none appearance-none"
+                      required
+                    >
+                      <option value="" disabled>Select type</option>
+                      {ASSESSMENT_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Deadline</label>

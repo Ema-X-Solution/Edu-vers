@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/shared/ui';
-import { FileUp, Link, PenTool, Loader2, Megaphone } from 'lucide-react';
+import { FileUp, Loader2, Megaphone, PenTool } from 'lucide-react';
 import { fetchAnnouncements } from '../../assessments/services/assessmentsService';
 import SubmitAssessmentModal from './SubmitAssessmentModal';
-
-// Fallback icon map based on keywords or default
-const getIconProps = (typeOrTitle = '') => {
-  const lower = typeOrTitle.toLowerCase();
-  if (lower.includes('assignment')) return { icon: FileUp, iconBg: 'bg-green-50', iconColor: 'text-green-500' };
-  if (lower.includes('essay')) return { icon: PenTool, iconBg: 'bg-blue-50', iconColor: 'text-blue-500' };
-  if (lower.includes('link')) return { icon: Link, iconBg: 'bg-red-50', iconColor: 'text-red-400' };
-  return { icon: Megaphone, iconBg: 'bg-teal-50', iconColor: 'text-teal-500' };
-};
 
 const DashboardAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -24,8 +15,9 @@ const DashboardAnnouncements = () => {
       try {
         setIsLoading(true);
         const res = await fetchAnnouncements();
-        // Assume res.data is the array, or res is the array
-        const data = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : res?.announcements || [];
+        const data = Array.isArray(res?.data) ? res.data
+          : Array.isArray(res) ? res
+          : res?.announcements || [];
         setAnnouncements(data);
       } catch (error) {
         console.error('Failed to fetch announcements:', error);
@@ -41,80 +33,101 @@ const DashboardAnnouncements = () => {
     setIsSubmitModalOpen(true);
   };
 
+  // Color-code urgency from timeLeft string
+  const getUrgencyStyle = (timeLeft = '') => {
+    const lower = timeLeft.toLowerCase();
+    if (lower.includes('hour') || lower === 'today' || lower.includes('1 day') || lower.includes('tomorrow'))
+      return { dotColor: 'bg-red-500', textColor: 'text-red-500', label: timeLeft || 'Due Soon' };
+    if (lower.includes('2 day') || lower.includes('3 day'))
+      return { dotColor: 'bg-orange-400', textColor: 'text-orange-500', label: timeLeft };
+    return { dotColor: 'bg-teal-500', textColor: 'text-teal-600', label: timeLeft };
+  };
+
+  const formatDeadline = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+    });
+  };
+
   return (
     <>
-      <Card className="p-0 overflow-hidden flex flex-col h-full col-span-2">
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+      <Card className="p-0 overflow-hidden flex flex-col h-full">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-xl font-bold text-dark-blue">Announcements</h2>
         </div>
-        
+
+        {/* List */}
         <div className="flex-1 overflow-auto">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-gray-400">
-              <Loader2 className="w-8 h-8 animate-spin mb-2" />
+            <div className="flex flex-col items-center justify-center h-full min-h-[180px] text-gray-400">
+              <Loader2 className="w-7 h-7 animate-spin mb-2" />
               <p className="text-sm">Loading announcements...</p>
             </div>
           ) : announcements.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-gray-400">
-              <Megaphone size={32} className="mb-2 opacity-50" />
+            <div className="flex flex-col items-center justify-center h-full min-h-[180px] text-gray-400">
+              <Megaphone size={30} className="mb-2 opacity-40" />
               <p className="text-sm font-medium">No announcements right now</p>
             </div>
           ) : (
             announcements.map((item, index) => {
-              const { icon: ItemIcon, iconBg, iconColor } = getIconProps(item.type || item.title);
-              
-              // Format status and deadline if provided by backend
-              const deadlineText = item.deadline || item.dueDate || item.endDate 
-                ? new Date(item.deadline || item.dueDate || item.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) 
-                : 'No Deadline';
-              
-              const subjectText = typeof item.course === 'object' ? item.course?.name || item.course?.code : (item.course || item.subject || 'General');
-              const statusText = item.status || 'Active';
-              const isUrgent = String(item.status || '').toLowerCase().includes('due tomorrow') || String(item.deadline || '').toLowerCase().includes('tomorrow');
-              const dotColor = isUrgent ? 'bg-red-500' : 'bg-teal-500';
-              const statusColor = isUrgent ? 'text-red-500' : 'text-teal-500';
+              const urgency = getUrgencyStyle(item.timeLeft || '');
+              const deadline = formatDeadline(item.deadlineDate || item.deadline || item.dueDate);
 
               return (
-                <div 
-                  key={item._id || item.id || index} 
-                  className={`flex items-center justify-between p-4 px-5 hover:bg-gray-50 transition-colors ${
+                <div
+                  key={item.assessmentId || item._id || item.id || index}
+                  className={`flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors ${
                     index !== announcements.length - 1 ? 'border-b border-gray-100' : ''
                   }`}
                 >
+                  {/* Left: Icon + Info */}
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg} ${iconColor}`}>
-                      <ItemIcon size={20} />
+                    {/* Icon */}
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                      <PenTool size={18} className="text-red-400" />
                     </div>
+
+                    {/* Text */}
                     <div>
-                      <h4 className="font-bold text-dark-blue leading-tight mb-1">{item.title || item.name || 'Announcement'}</h4>
-                      <p className="text-xs text-gray-text">{subjectText}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></span>
-                        <span className={`text-xs font-medium ${statusColor}`}>{statusText}</span>
+                      <h4 className="font-bold text-dark-blue text-sm leading-tight mb-0.5">
+                        {item.title || item.name || 'Announcement'}
+                      </h4>
+                      <p className="text-xs text-gray-400 mb-1">
+                        {item.courseName || item.course?.name || item.course || 'General'}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${urgency.dotColor}`} />
+                        <span className={`text-xs font-semibold ${urgency.textColor}`}>
+                          {urgency.label}
+                        </span>
                       </div>
                     </div>
                   </div>
 
+                  {/* Right: Deadline + Submit */}
                   <div className="flex items-center gap-6">
                     <div className="text-center">
                       <p className="text-xs font-bold text-dark-blue mb-0.5">Deadline</p>
-                      <p className="text-xs text-gray-text">{deadlineText}</p>
+                      <p className="text-xs text-gray-400">{deadline}</p>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleOpenSubmit(item)}
-                      className="w-8 h-8 rounded-lg bg-dark-blue text-white flex items-center justify-center hover:bg-opacity-90 transition cursor-pointer"
+                      className="w-10 h-10 rounded-xl bg-[#0D9488] hover:bg-[#0F766E] text-white flex items-center justify-center transition-colors shadow-sm shadow-teal-500/20"
                     >
-                      <FileUp size={16} />
+                      <FileUp size={17} />
                     </button>
                   </div>
                 </div>
-              )
+              );
             })
           )}
         </div>
       </Card>
 
-      <SubmitAssessmentModal 
+      <SubmitAssessmentModal
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
         assessment={selectedAssessment}

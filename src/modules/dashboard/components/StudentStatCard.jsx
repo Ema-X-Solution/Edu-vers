@@ -12,7 +12,9 @@ const StudentStatCard = ({
   statusDotColor = 'bg-gray-400',
   iconBgColor = 'bg-green-50',
   iconColor = 'text-green-500',
-  actionIcon: ActionIcon = Info
+  actionIcon: ActionIcon = Info,
+  onActionClick,
+  onStatusClick
 }) => {
   return (
     <Card className="flex flex-col justify-between p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 relative">
@@ -20,7 +22,11 @@ const StudentStatCard = ({
         <div className={`w-10 h-10 rounded-full ${iconBgColor} flex items-center justify-center ${iconColor}`}>
           <Icon size={20} />
         </div>
-        <ActionIcon size={18} className="text-gray-light cursor-pointer hover:text-gray-text transition" />
+        <ActionIcon 
+          size={18} 
+          className="text-gray-light cursor-pointer hover:text-gray-text transition" 
+          onClick={onActionClick}
+        />
       </div>
       
       <div>
@@ -37,7 +43,10 @@ const StudentStatCard = ({
         )}
         
         {statusText && (
-          <div className="flex items-center gap-1.5 mt-2">
+          <div 
+            className={`flex items-center gap-1.5 mt-2 ${onStatusClick ? 'cursor-pointer hover:opacity-80 transition-opacity p-1 -ml-1 rounded-md hover:bg-gray-50 inline-flex' : ''}`}
+            onClick={onStatusClick}
+          >
             <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`}></span>
             <span className={`text-xs font-medium ${statusColor}`}>{statusText}</span>
           </div>

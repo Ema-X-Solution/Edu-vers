@@ -8,3 +8,7 @@ import httpClient from '@/shared/services/httpClient';
 export const fetchUserProfile = async (id) => {
   return await httpClient.get(`/users/profile/${id}`);
 };
+
+export const fetchCurrentGrades = async (semester = 'FALL') => {
+  return await httpClient.get(`/grades/my-current-grades?semester=${semester}`);
+};

@@ -19,7 +19,7 @@ const DashboardCommunities = ({ communities = [] }) => {
       </div>
       
       <div className="flex-1 px-5 pb-5 space-y-4 overflow-y-auto scrollbar-thin">
-        {communities.length > 0 ? communities.map((community) => (
+        {Array.isArray(communities) && communities.length > 0 ? communities.map((community) => (
           <div 
             key={community.id} 
             onClick={() => navigate(`/student-communities/${community.id}`)}

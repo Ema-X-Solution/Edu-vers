@@ -65,6 +65,8 @@ const AppRouter = () => (
       <Route path="/communities/:clubId"          element={<CommunityDetailsPage />} />
       <Route path="/student-communities/:clubId"  element={<CommunityDetailsPage />} />
       <Route path="/users/profile/:id"            element={<UserProfilePage />} />
+      <Route path="/student-profile"              element={<UserProfilePage />} />
+      <Route path="/prof-profile"                 element={<UserProfilePage />} />
 
       {/* Fallback — redirect unknown paths to login or dashboard */}
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />

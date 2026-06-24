@@ -9,6 +9,8 @@ import DashboardCommunities from '../components/DashboardCommunities';
 
 import { DashboardLayout } from '@/app/layouts';
 import { getStudentDashboardStats } from '../services/dashboardService';
+import AIInsightModal from '../components/AIInsightModal';
+import { predictRisk, classifyGPA, fetchProfile, fetchCurrentGrades } from '../services/aiService';
 
 const StudentDashboardPage = () => {
   const [data, setData] = useState(null);
@@ -27,7 +29,136 @@ const StudentDashboardPage = () => {
     };
     fetchDashboard();
   }, []);
+  const [aiModal, setAiModal] = useState({
+    isOpen: false,
+    title: '',
+    isLoading: false,
+    error: null,
+    data: null,
+    successStyle: false
+  });
 
+  const calculateAverageGrade = (grades) => {
+    if (!grades || !Array.isArray(grades) || grades.length === 0) return 0;
+    let totalScore = 0;
+    grades.forEach(g => {
+      const { midterm = 0, final = 0, practical = 0, assignment1 = 0, assignment2 = 0 } = g?.marks || {};
+      totalScore += (Number(midterm) + Number(final) + Number(practical) + Number(assignment1) + Number(assignment2));
+    });
+    return totalScore / grades.length;
+  };
+
+  const calculateFailedCourses = (grades) => {
+    if (!grades || !Array.isArray(grades) || grades.length === 0) return 0;
+    let failedCount = 0;
+    grades.forEach(g => {
+      const { midterm = 0, final = 0, practical = 0, assignment1 = 0, assignment2 = 0 } = g?.marks || {};
+      const total = Number(midterm) + Number(final) + Number(practical) + Number(assignment1) + Number(assignment2);
+      if (total < 50) failedCount++;
+    });
+    return failedCount;
+  };
+
+  const handleRiskAI = async () => {
+    setAiModal({ isOpen: true, title: 'Academic Risk Analysis', isLoading: true, error: null, data: null, successStyle: false });
+    try {
+      const userInfoStr = localStorage.getItem('user_info');
+      const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {};
+      const studentId = userInfo.userId;
+      if (!studentId) throw new Error('Student ID not found in session.');
+
+      const profile = await fetchProfile(studentId);
+      const gradesRes = await fetchCurrentGrades();
+      const grades = gradesRes?.data || gradesRes; // depending on response structure
+
+      const payload = {
+        current_gba: data?.currentGPA || 0,
+        total_credit_hours: data?.totalCredits || 0,
+        semester: Number(profile?.academicYear) || 1,
+        avg_grade: calculateAverageGrade(grades),
+        failed_courses_count: calculateFailedCourses(grades),
+        in_progress_count: data?.registeredCourses || 0,
+        total_courses: (data?.completedCourses || 0) + (data?.registeredCourses || 0)
+      };
+
+      const result = await predictRisk(payload);
+      let formattedRisk = '';
+      if (result && typeof result === 'object' && result.hasOwnProperty('at_risk')) {
+        const riskProb = (result.risk_probability * 100).toFixed(1);
+        if (result.at_risk) {
+          formattedRisk = `Academic Risk Alert: The AI model indicates that you are at risk with a probability of ${riskProb}%.\n\nIt is highly recommended to reach out to your academic advisor or professors for support.`;
+        } else {
+          formattedRisk = `Good Standing: The AI model indicates that you are not at risk. Your risk probability is only ${riskProb}%.\n\nKeep up the excellent work!`;
+        }
+      } else {
+        formattedRisk = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+      }
+      setAiModal(prev => ({ ...prev, isLoading: false, data: formattedRisk }));
+    } catch (err) {
+      setAiModal(prev => ({ ...prev, isLoading: false, error: err.message || 'Failed to analyze academic risk' }));
+    }
+  };
+
+  const handleGPAClassAI = async () => {
+    setAiModal({ isOpen: true, title: 'GPA Classification Insights', isLoading: true, error: null, data: null, successStyle: true });
+    try {
+      const userInfoStr = localStorage.getItem('user_info');
+      const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {};
+      const studentId = userInfo.userId;
+      if (!studentId) throw new Error('Student ID not found in session.');
+
+      const profile = await fetchProfile(studentId);
+      const gradesRes = await fetchCurrentGrades();
+      const grades = gradesRes?.data || gradesRes;
+
+      const payload = {
+        total_credit_hours: data?.totalCredits || 0,
+        semester: Number(profile?.academicYear) || 1,
+        avg_grade: calculateAverageGrade(grades),
+        failed_courses_count: calculateFailedCourses(grades),
+        total_courses: (data?.completedCourses || 0) + (data?.registeredCourses || 0),
+        current_gba: data?.currentGPA || 0
+      };
+
+      const result = await classifyGPA(payload);
+      let formattedGPA = '';
+      if (result && typeof result === 'object' && result.model_prediction) {
+        const prediction = result.model_prediction || result.rule_based_level;
+        formattedGPA = `AI GPA Classification: Your academic standing is currently classified as "${prediction}".\n\n`;
+        if (result.probabilities) {
+          formattedGPA += "Detailed Probabilities:\n";
+          Object.entries(result.probabilities).forEach(([key, value]) => {
+            formattedGPA += `• ${key}: ${(value * 100).toFixed(1)}%\n`;
+          });
+        }
+      } else {
+        formattedGPA = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+      }
+      setAiModal(prev => ({ ...prev, isLoading: false, data: formattedGPA }));
+    } catch (err) {
+      setAiModal(prev => ({ ...prev, isLoading: false, error: err.message || 'Failed to classify GPA' }));
+    }
+  };
+
+  const handleTrackRecommendationAI = () => {
+    setAiModal({ 
+      isOpen: true, 
+      title: 'Track Recommendation', 
+      isLoading: false, 
+      error: null, 
+      data: 'Track recommendation data is not available yet.\n\nPlease check back later when track scores are integrated.', 
+      successStyle: false 
+    });
+    // TODO: When track scores are available from the backend, map them here:
+    // const payload = {
+    //   track_scores: {
+    //     track_1_score: data?.trackScores?.track1 || 0,
+    //     track_2_score: data?.trackScores?.track2 || 0,
+    //     track_3_score: data?.trackScores?.track3 || 0
+    //   }
+    // };
+    // const result = await recommendTrack(payload);
+  };
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -60,6 +191,8 @@ const StudentDashboardPage = () => {
             statusDotColor={data?.currentGPA < 2 ? "bg-yellow-500" : "bg-green-500"}
             iconBgColor="bg-green-50"
             iconColor="text-green-500"
+            onActionClick={handleGPAClassAI}
+            onStatusClick={handleRiskAI}
           />
           <StudentStatCard 
             title="Completed Courses" 
@@ -67,6 +200,7 @@ const StudentDashboardPage = () => {
             icon={BookOpen} 
             iconBgColor="bg-blue-50"
             iconColor="text-blue-500"
+            onActionClick={handleTrackRecommendationAI}
           />
           <StudentStatCard 
             title="Tasks Completed" 
@@ -93,10 +227,10 @@ const StudentDashboardPage = () => {
           
           {/* Bottom Row: Announcements & Communities */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            <div className="lg:col-span-9 h-[400px]">
+            <div className="lg:col-span-7 h-[420px]">
               <DashboardAnnouncements />
             </div>
-            <div className="lg:col-span-3 flex flex-col gap-6 h-[400px]">
+            <div className="lg:col-span-5 flex flex-col gap-6 h-[420px]">
               <AcademicAssistantBanner />
               <div className="flex-1 overflow-hidden">
                 <DashboardCommunities communities={data?.joinedCommunities || []} />
@@ -107,6 +241,17 @@ const StudentDashboardPage = () => {
         </div>
         </div>
       </div>
+      
+      <AIInsightModal 
+        isOpen={aiModal.isOpen}
+        onClose={() => setAiModal(prev => ({ ...prev, isOpen: false }))}
+        title={aiModal.title}
+        isLoading={aiModal.isLoading}
+        error={aiModal.error}
+        data={aiModal.data}
+        successStyle={aiModal.successStyle}
+        onRetry={aiModal.title.includes('Risk') ? handleRiskAI : (aiModal.title.includes('GPA') ? handleGPAClassAI : null)}
+      />
     </DashboardLayout>
   );
 };

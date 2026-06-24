@@ -17,7 +17,7 @@ const SubmitAssessmentModal = ({ isOpen, onClose, assessment }) => {
       return;
     }
 
-    const assessmentId = assessment._id || assessment.id;
+    const assessmentId = assessment.assessmentId || assessment._id || assessment.id;
 
     if (!assessmentId) {
       toast.error('Invalid assessment ID');

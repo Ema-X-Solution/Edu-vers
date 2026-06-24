@@ -7,10 +7,12 @@ const COLORS = ['bg-teal-500', 'bg-orange-500', 'bg-indigo-900', 'bg-purple-500'
 const TopCoursesGrades = ({ courses = [] }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const validCourses = Array.isArray(courses) ? courses : [];
+  
   // Map API format {percentage: 98} to UI format for all courses
-  const allFormattedCourses = courses.map((c, idx) => ({
+  const allFormattedCourses = validCourses.map((c, idx) => ({
     name: c.name || `Course ${idx + 1}`,
-    grade: c.percentage,
+    grade: c.percentage || 0,
     color: COLORS[idx % COLORS.length]
   }));
   
@@ -41,7 +43,7 @@ const TopCoursesGrades = ({ courses = [] }) => {
           )}
         </div>
 
-        {courses.length > 4 && (
+        {validCourses.length > 4 && (
           <div className="mt-6 flex justify-center">
             <button 
               onClick={() => setIsModalOpen(true)}

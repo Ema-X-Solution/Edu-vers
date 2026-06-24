@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Landmark, BookOpen, Star, LogOut, GraduationCap, X, Users2 } from 'lucide-react';
+import { LayoutDashboard, Users, Landmark, BookOpen, Star, LogOut, GraduationCap, X, Users2, User } from 'lucide-react';
 import { ROUTES } from '@/shared/constants';
 
 const Sidebar = ({ isOpen = false, setIsOpen }) => {
@@ -46,11 +46,13 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
     { name: 'Dashboard', path: '/student-dashboard', icon: LayoutDashboard },
     { name: 'Courses',   path: '/student-courses',   icon: BookOpen },
     { name: 'Communities', path: '/student-communities', icon: Users },
+    { name: 'Profile',   path: '/student-profile',   icon: User },
   ];
 
   const profNavItems = [
     { name: 'Tasks management', path: '/prof-dashboard', icon: Landmark },
     { name: 'Grades management', path: '/prof-grades', icon: Star },
+    { name: 'Profile', path: '/prof-profile', icon: User },
   ];
 
 

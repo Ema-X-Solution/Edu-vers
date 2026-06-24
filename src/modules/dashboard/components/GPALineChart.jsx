@@ -6,8 +6,9 @@ const GPALineChart = ({ history = [] }) => {
   const [filter, setFilter] = useState('All');
 
   const chartData = useMemo(() => {
-    if (!history || history.length === 0) return [{ name: 'Start', gpa: 0 }];
-    return history.map(item => ({
+    const validHistory = Array.isArray(history) ? history : [];
+    if (validHistory.length === 0) return [{ name: 'Start', gpa: 0 }];
+    return validHistory.map(item => ({
       name: `Year ${item.academicYear}`,
       gpa: item.cumulativeGpa
     }));
