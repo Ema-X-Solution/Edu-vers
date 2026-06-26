@@ -10,7 +10,8 @@ import DashboardCommunities from '../components/DashboardCommunities';
 import { DashboardLayout } from '@/app/layouts';
 import { getStudentDashboardStats } from '../services/dashboardService';
 import AIInsightModal from '../components/AIInsightModal';
-import { predictRisk, classifyGPA, fetchProfile, fetchCurrentGrades } from '../services/aiService';
+import { predictRisk, classifyGPA, fetchProfile, fetchCurrentGrades, recommendTrack } from '../services/aiService';
+import { fetchAcademicRecords } from '../../users/services/usersService';
 
 const StudentDashboardPage = () => {
   const [data, setData] = useState(null);
@@ -140,24 +141,54 @@ const StudentDashboardPage = () => {
     }
   };
 
-  const handleTrackRecommendationAI = () => {
+  const handleTrackRecommendationAI = async () => {
     setAiModal({ 
       isOpen: true, 
       title: 'Track Recommendation', 
-      isLoading: false, 
+      isLoading: true, 
       error: null, 
-      data: 'Track recommendation data is not available yet.\n\nPlease check back later when track scores are integrated.', 
-      successStyle: false 
+      data: null, 
+      successStyle: true 
     });
-    // TODO: When track scores are available from the backend, map them here:
-    // const payload = {
-    //   track_scores: {
-    //     track_1_score: data?.trackScores?.track1 || 0,
-    //     track_2_score: data?.trackScores?.track2 || 0,
-    //     track_3_score: data?.trackScores?.track3 || 0
-    //   }
-    // };
-    // const result = await recommendTrack(payload);
+    
+    try {
+      const userInfoStr = localStorage.getItem('user_info');
+      const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {};
+      const studentId = userInfo.userId;
+      if (!studentId) throw new Error('Student ID not found in session.');
+
+      const recordsRes = await fetchAcademicRecords(studentId);
+      const coursesData = recordsRes?.data || recordsRes || [];
+
+      if (!coursesData || coursesData.length === 0) {
+         throw new Error('No academic records found to recommend a track.');
+      }
+
+      const payload = {
+        courses: coursesData.map(c => ({
+          course_id: c.code,
+          grade: Number(c.score) || 0
+        }))
+      };
+
+      const result = await recommendTrack(payload);
+      let formattedTrack = '';
+      if (result && typeof result === 'object' && result.recommended_track_name) {
+        formattedTrack = `Recommended Track: ${result.recommended_track_name}\n\n`;
+        if (Array.isArray(result.probabilities)) {
+          formattedTrack += "Track Probabilities:\n";
+          const sortedProbs = [...result.probabilities].sort((a, b) => b.probability - a.probability);
+          sortedProbs.forEach(track => {
+            formattedTrack += `• ${track.track_name}: ${(track.probability * 100).toFixed(1)}%\n`;
+          });
+        }
+      } else {
+        formattedTrack = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+      }
+      setAiModal(prev => ({ ...prev, isLoading: false, data: formattedTrack }));
+    } catch (err) {
+      setAiModal(prev => ({ ...prev, isLoading: false, error: err.message || 'Failed to recommend track' }));
+    }
   };
   if (isLoading) {
     return (

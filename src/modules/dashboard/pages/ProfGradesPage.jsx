@@ -293,10 +293,11 @@ const ProfGradesPage = () => {
                         const isLate = value === 'LATE';
                         const isExc = value === 'EXC';
                         const isDash = value === '--' || value === '';
+                        const isReadOnly = field === 'assignment1' || field === 'assignment2';
 
                         return (
                           <td key={field} className="py-4 px-6 text-center border-r border-gray-100 last:border-0 relative group">
-                            {isEditMode ? (
+                            {isEditMode && !isReadOnly ? (
                               <input 
                                 type="text" 
                                 value={isDash ? '' : value}

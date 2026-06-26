@@ -110,7 +110,7 @@ const StudentCoursesPage = () => {
         const res = await fetchStudentRegistrationCards(userId);
         const data = res?.data || res;
         setStudentCards(data);
-        setOpenRegister(data?.openRegister === true);
+        setOpenRegister(data?.openRegister === true || data?.openRigister === true);
       } catch (err) {
         console.error('Failed to load student cards:', err);
       }
@@ -211,24 +211,14 @@ const StudentCoursesPage = () => {
           </div>
           <div className="flex items-center gap-3">
             {openRegister ? (
-              <>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2 font-bold py-2.5 px-4 bg-white border-gray-200"
-                  onClick={() => startFlow('SCHEDULE')}
-                >
-                  <Calendar size={18} className="text-gray-500" />
-                  View My Schedule
-                </Button>
-                <Button
-                  variant="primary"
-                  className="flex items-center gap-2 font-bold py-2.5 px-4 bg-teal-500 hover:bg-teal-600"
-                  onClick={() => startFlow('REGISTER')}
-                >
-                  <Plus size={18} />
-                  Add Course
-                </Button>
-              </>
+              <Button
+                variant="primary"
+                className="flex items-center gap-2 font-bold py-2.5 px-4 bg-teal-500 hover:bg-teal-600"
+                onClick={() => startFlow('REGISTER')}
+              >
+                <Plus size={18} />
+                Add Course
+              </Button>
             ) : (
               <Button
                 variant="outline"

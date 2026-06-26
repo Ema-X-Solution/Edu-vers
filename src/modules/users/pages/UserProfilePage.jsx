@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/app/layouts';
 import { Card, Loader, Button } from '@/shared/ui';
-import { fetchUserProfile, fetchCurrentGrades } from '../services/usersService';
+import { fetchUserProfile, fetchCurrentGrades, fetchAcademicRecords } from '../services/usersService';
 import { User, Mail, Phone, MapPin, Building, Calendar, Hash, ArrowLeft, BookOpen, Star, Clock, CheckCircle, GraduationCap, Edit2, Trash2, Loader2, ChevronDown } from 'lucide-react';
 
 const UserProfilePage = () => {
@@ -23,6 +23,10 @@ const UserProfilePage = () => {
   const [selectedSemester, setSelectedSemester] = useState('FALL');
   const [gradesData, setGradesData] = useState([]);
   const [isGradesLoading, setIsGradesLoading] = useState(false);
+
+  // Academic Summary state
+  const [academicRecords, setAcademicRecords] = useState([]);
+  const [isRecordsLoading, setIsRecordsLoading] = useState(false);
 
   useEffect(() => {
     let activeId = paramId;
@@ -79,6 +83,23 @@ const UserProfilePage = () => {
       loadGrades();
     }
   }, [activeTab, selectedSemester]);
+
+  useEffect(() => {
+    if (activeTab === 'Academic Summary' && currentId) {
+      const loadRecords = async () => {
+        try {
+          setIsRecordsLoading(true);
+          const res = await fetchAcademicRecords(currentId);
+          setAcademicRecords(res?.data || res || []);
+        } catch (err) {
+          console.error('Failed to fetch academic records', err);
+        } finally {
+          setIsRecordsLoading(false);
+        }
+      };
+      loadRecords();
+    }
+  }, [activeTab, currentId]);
 
   if (loading) {
     return (
@@ -353,9 +374,72 @@ const UserProfilePage = () => {
             )}
 
             {activeTab === 'Academic Summary' && (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <GraduationCap size={48} className="mb-4 opacity-20" />
-                <p className="font-semibold">Academic summary data will be available here.</p>
+              <div>
+                <div className="flex items-center gap-2 mb-6">
+                  <BookOpen size={20} className="text-[#0D9488]" />
+                  <h3 className="text-lg font-black text-dark-blue">Academic Records Summary</h3>
+                </div>
+                
+                <div className="overflow-x-auto rounded-xl border border-gray-100 relative">
+                  {isRecordsLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
+                      <Loader2 size={32} className="text-[#0D9488] animate-spin" />
+                    </div>
+                  )}
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/30">
+                        <th className="py-4 px-6 text-[11px] font-black text-gray-400 uppercase tracking-wider">COURSE NAME</th>
+                        <th className="py-4 px-6 text-[11px] font-black text-gray-400 uppercase tracking-wider">CODE</th>
+                        <th className="py-4 px-6 text-[11px] font-black text-gray-400 uppercase tracking-wider text-center">CREDIT HOURS</th>
+                        <th className="py-4 px-6 text-[11px] font-black text-gray-400 uppercase tracking-wider text-center">SCORE</th>
+                        <th className="py-4 px-6 text-[11px] font-black text-gray-400 uppercase tracking-wider text-center">GRADE</th>
+                        <th className="py-4 px-6 text-[11px] font-black text-gray-400 uppercase tracking-wider text-center">SEMESTER / YEAR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {academicRecords && academicRecords.length > 0 ? (
+                        academicRecords.map((record, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+                            <td className="py-5 px-6 text-sm font-bold text-dark-blue">
+                              {record.name}
+                              {record.isSummer && <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">Summer</span>}
+                            </td>
+                            <td className="py-5 px-6 text-sm font-semibold text-gray-500">
+                              {record.code}
+                            </td>
+                            <td className="py-5 px-6 text-sm font-bold text-dark-blue text-center">
+                              {record.creditHours}
+                            </td>
+                            <td className="py-5 px-6 text-sm font-bold text-dark-blue text-center">
+                              {record.score}
+                            </td>
+                            <td className="py-5 px-6 text-sm font-bold text-dark-blue text-center">
+                              <span className={`px-2 py-1 rounded font-bold ${
+                                record.grade?.includes('A') ? 'bg-green-100 text-green-700' :
+                                record.grade?.includes('B') ? 'bg-blue-100 text-blue-700' :
+                                record.grade?.includes('C') ? 'bg-yellow-100 text-yellow-700' :
+                                record.grade?.includes('F') ? 'bg-red-100 text-red-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {record.grade}
+                              </span>
+                            </td>
+                            <td className="py-5 px-6 text-sm font-semibold text-gray-500 text-center">
+                              {record.semester} - Y{record.academicYear}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="py-10 text-center text-gray-400 font-semibold">
+                            {!isRecordsLoading ? 'No academic records available.' : ''}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

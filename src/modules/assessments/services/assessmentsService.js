@@ -18,3 +18,11 @@ export const submitAssessment = async (assessmentId, submissionFileUrl) => {
     submissionFileUrl
   });
 };
+
+/**
+ * Fetch course assessments/tasks.
+ * @param {string} courseId 
+ */
+export const fetchCourseAssessments = async (courseId) => {
+  return await httpClient.get(`/assessments/course/${courseId}`);
+};

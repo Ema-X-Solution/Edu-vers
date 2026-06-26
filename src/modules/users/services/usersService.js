@@ -12,3 +12,7 @@ export const fetchUserProfile = async (id) => {
 export const fetchCurrentGrades = async (semester = 'FALL') => {
   return await httpClient.get(`/grades/my-current-grades?semester=${semester}`);
 };
+
+export const fetchAcademicRecords = async (studentId) => {
+  return await httpClient.get(`/academic-records/courses/${studentId}`);
+};
