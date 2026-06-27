@@ -541,7 +541,7 @@ const CommunityModal = ({ isOpen, onClose, onSuccess, initialData }) => {
             <p className="mt-2 text-xs font-bold text-dark-blue break-all bg-blue-50 px-2 py-1 rounded">Selected: {file.name}</p>
           )}
         </div>
-        <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 space-y-4">
+        {/* <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <Bell size={16} className="text-gray-500" />
             <span className="text-sm font-bold text-dark-blue">Permeation</span>
@@ -562,7 +562,7 @@ const CommunityModal = ({ isOpen, onClose, onSuccess, initialData }) => {
               />
             </div>
           ))}
-        </div>
+        </div> */}
         <div className="flex gap-3 pt-1">
           <button
             type="button"

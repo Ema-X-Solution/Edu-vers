@@ -11,7 +11,7 @@ const TopCoursesGrades = ({ courses = [] }) => {
   
   // Map API format {percentage: 98} to UI format for all courses
   const allFormattedCourses = validCourses.map((c, idx) => ({
-    name: c.name || `Course ${idx + 1}`,
+    name: c.courseName || `Course ${idx + 1}`,
     grade: c.percentage || 0,
     color: COLORS[idx % COLORS.length]
   }));
