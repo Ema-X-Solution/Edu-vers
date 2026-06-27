@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants';
 import { Card, Loader, Button } from '@/shared/ui';
-import { User, Mail, Phone, MapPin, Building, Calendar, Hash, ArrowLeft, BookOpen, Clock, Trash2, Plus, ChevronDown, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Building, Calendar, Hash, ArrowLeft, BookOpen, Clock, Trash2, Plus, ChevronDown, Loader2, Edit2 } from 'lucide-react';
 import httpClient from '@/shared/services/httpClient';
 import { fetchCourseAssessments } from '../../assessments/services/assessmentsService';
 import AddTaskModal from '../components/AddTaskModal';
+import EditTaskModal from '../components/EditTaskModal';
+import TaskDetailsModal from '../components/TaskDetailsModal';
 import { DashboardLayout } from '@/app/layouts';
 
 const ProfDashboardPage = () => {
@@ -25,6 +27,12 @@ const ProfDashboardPage = () => {
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState(null); // task object to delete
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Edit Task state
+  const [editTaskId, setEditTaskId] = useState(null);
+
+  // View Details state
+  const [detailsTaskId, setDetailsTaskId] = useState(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -61,21 +69,22 @@ const ProfDashboardPage = () => {
   }, []);
 
   // Fetch tasks when selected course changes
-  useEffect(() => {
+  const handleLoadTasks = async () => {
     if (!selectedCourseId) return;
-    const loadTasks = async () => {
-      setIsTasksLoading(true);
-      try {
-        const res = await fetchCourseAssessments(selectedCourseId);
-        setTasks(res?.data || res || []);
-      } catch (err) {
-        console.error('Failed to fetch tasks:', err);
-        setTasks([]);
-      } finally {
-        setIsTasksLoading(false);
-      }
-    };
-    loadTasks();
+    setIsTasksLoading(true);
+    try {
+      const res = await fetchCourseAssessments(selectedCourseId);
+      setTasks(res?.data || res || []);
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+      setTasks([]);
+    } finally {
+      setIsTasksLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleLoadTasks();
   }, [selectedCourseId]);
 
   const handleDeleteTask = async () => {
@@ -214,6 +223,12 @@ const ProfDashboardPage = () => {
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setDetailsTaskId(task._id)}
+                              className="text-xs font-bold text-[#0D9488] hover:bg-[#D1F1EB] px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                              View Details
+                            </button>
                             {task.fileUrl && (
                               <a
                                 href={task.fileUrl}
@@ -224,6 +239,13 @@ const ProfDashboardPage = () => {
                                 View File
                               </a>
                             )}
+                            <button
+                              onClick={() => setEditTaskId(task._id)}
+                              className="text-[#0D9488] hover:bg-[#D1F1EB] p-1.5 rounded-lg transition-colors"
+                              title="Edit Task"
+                            >
+                              <Edit2 size={16} />
+                            </button>
                              <button
                               onClick={() => setDeleteTarget(task)}
                               className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
@@ -282,6 +304,21 @@ const ProfDashboardPage = () => {
         isOpen={isAddTaskModalOpen} 
         onClose={() => setIsAddTaskModalOpen(false)} 
         courses={courses}
+      />
+      
+      {/* Edit Task Modal */}
+      <EditTaskModal 
+        isOpen={!!editTaskId}
+        onClose={() => setEditTaskId(null)}
+        taskId={editTaskId}
+        onSuccess={handleLoadTasks}
+      />
+
+      {/* Task Details Modal */}
+      <TaskDetailsModal
+        isOpen={!!detailsTaskId}
+        onClose={() => setDetailsTaskId(null)}
+        taskId={detailsTaskId}
       />
     </DashboardLayout>
   );
