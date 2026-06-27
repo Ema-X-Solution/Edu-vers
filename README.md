@@ -158,7 +158,7 @@ The UI is designed to feel highly premium, dynamic, and modern.
 2. **Environment Variables:**
    Create a `.env` file in the root directory and specify the backend URL:
    ```env
-   VITE_API_BASE_URL=https://eduverse-production-bc64.up.railway.app
+   VITE_API_BASE_URL=eduverse-production-fdcb.up.railway.app
    ```
 
 3. **Run Development Server:**

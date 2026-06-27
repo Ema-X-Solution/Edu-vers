@@ -11,12 +11,14 @@ import { loginSchema } from '../validations/loginSchema';
 import PasswordField from '../components/PasswordField';
 import useAuth from '../hooks/useAuth';
 import { AUTH_ROUTES, AUTH_PAGE_COPY } from '../constants/authConstants';
+import { useNavigate } from 'react-router-dom';
 
 // Drop your illustration image into src/assets/ and import it here:
 // import illustration from '@/assets/login-illustration.png';
 const illustration = null;
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const { login, error: serverError } = useAuth();
 
@@ -24,6 +26,27 @@ const LoginPage = () => {
     resolver: yupResolver(loginSchema),
     defaultValues: { email: '', password: '', remember: false },
   });
+
+  // Auto redirect if already logged in
+  React.useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    const userInfoStr = localStorage.getItem('user_info');
+    if (token && userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        const role = (userInfo.userRole || '').toLowerCase();
+        if (role === 'student') {
+          navigate(AUTH_ROUTES.STUDENT_DASHBOARD);
+        } else if (role === 'prof' || role === 'professor') {
+          navigate(AUTH_ROUTES.PROF_DASHBOARD);
+        } else {
+          navigate(AUTH_ROUTES.STUDENTS || '/dashboard/students');
+        }
+      } catch (e) {
+        console.error('Failed to parse user info', e);
+      }
+    }
+  }, [navigate]);
 
   const onSubmit = (data) => login(data, { setLoading: setIsLoading });
 
@@ -93,9 +116,9 @@ const LoginPage = () => {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-200" />
           </div>
-          <div className="relative flex justify-center text-sm">
+          {/* <div className="relative flex justify-center text-sm">
             <span className="px-3 bg-white text-gray-400">or continue with</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Social buttons */}

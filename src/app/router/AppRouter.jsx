@@ -11,7 +11,7 @@ const LoginPage          = lazy(() => import('@/modules/auth/pages/LoginPage'));
 const ForgotPasswordPage  = lazy(() => import('@/modules/auth/pages/ForgotPasswordPage'));
 const OTPVerificationPage = lazy(() => import('@/modules/auth/pages/OTPVerificationPage'));
 const ResetPasswordPage   = lazy(() => import('@/modules/auth/pages/ResetPasswordPage'));
-const DashboardPage       = lazy(() => import('@/modules/dashboard/pages/DashboardPage'));
+
 const StudentDashboardPage = lazy(() => import('@/modules/dashboard/pages/StudentDashboardPage'));
 const ProfDashboardPage    = lazy(() => import('@/modules/dashboard/pages/ProfDashboardPage'));
 const ProfGradesPage       = lazy(() => import('@/modules/dashboard/pages/ProfGradesPage'));
@@ -46,7 +46,7 @@ const AppRouter = () => (
       <Route path={ROUTES.RESET_PASSWORD}   element={<ResetPasswordPage />} />
 
       {/* Dashboards */}
-      <Route path={ROUTES.DASHBOARD}  element={<DashboardPage />} />
+      <Route path={ROUTES.DASHBOARD}  element={<Navigate to={ROUTES.STUDENTS} replace />} />
       <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboardPage />} />
       <Route path={ROUTES.PROF_DASHBOARD} element={<ProfDashboardPage />} />
       <Route path="/prof-grades" element={<ProfGradesPage />} />

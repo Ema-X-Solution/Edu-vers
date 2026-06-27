@@ -34,12 +34,10 @@ const Sidebar = ({ isOpen = false, setIsOpen }) => {
   const isProfFlow    = role === 'professor' || role === 'prof';
 
   const adminNavItems = [
-    { name: 'Dashboard',      path: '/dashboard',             icon: LayoutDashboard },
     { name: 'Students',       path: '/dashboard/students',    icon: Users },
     { name: 'Academic Staff', path: '/dashboard/staff',       icon: Landmark },
     { name: 'Courses',        path: '/dashboard/courses',     icon: BookOpen },
     { name: 'Communities',    path: '/dashboard/communities', icon: Users2 },
-    { name: 'Grades',         path: '/dashboard/grades',      icon: Star },
   ];
 
   const studentNavItems = [

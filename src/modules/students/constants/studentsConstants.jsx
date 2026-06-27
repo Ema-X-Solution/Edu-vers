@@ -43,4 +43,4 @@ export const MOCK_STUDENTS = [
   { id: 'STU008', name: 'Fiona Green',   email: 'fiona@example.com',   major: 'Chemistry',        status: 'Active'   },
 ];
 
-export const STUDENTS_PAGE_SIZE = 5;
+export const STUDENTS_PAGE_SIZE = 15;

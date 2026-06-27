@@ -32,4 +32,4 @@ export const STAFF_STATUS_OPTIONS = [
   { value: 'Inactive', label: 'Inactive'    },
 ];
 
-export const STAFF_PAGE_SIZE = 5;
+export const STAFF_PAGE_SIZE = 15;

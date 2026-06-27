@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Menu } from 'lucide-react';
+import AdminSemesterButton from './AdminSemesterButton';
 
 const Topbar = ({ onSearchChange, searchPlaceholder = 'Search for students, courses, documents...', actions, onMenuToggle }) => {
   const [userInfo, setUserInfo] = useState({ fullName: '', userRole: '' });
@@ -42,6 +43,11 @@ const Topbar = ({ onSearchChange, searchPlaceholder = 'Search for students, cour
       
       {/* Topbar Actions */}
       <div className="flex items-center gap-2 md:gap-3 ml-auto">
+        {/* Admin Semester Action */}
+        {userInfo.userRole && userInfo.userRole.toLowerCase() === 'admin' && (
+          <AdminSemesterButton />
+        )}
+        
         {/* Optional page-level action buttons */}
         {actions}
 

@@ -37,7 +37,7 @@ const useAuth = () => {
       } else if (role === 'prof' || role === 'professor') {
         navigate(AUTH_ROUTES.PROF_DASHBOARD);
       } else {
-        navigate(AUTH_ROUTES.DASHBOARD);
+        navigate(AUTH_ROUTES.STUDENTS || '/dashboard/students');
       }
     } catch (err) {
       if (err.message === 'You should confirm your email first, new OTP sent to your email') {

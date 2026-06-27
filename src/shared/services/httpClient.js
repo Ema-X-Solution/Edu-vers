@@ -54,14 +54,49 @@ const request = async (endpoint, options = {}) => {
   });
 
   if (!response.ok) {
-    // Only clear the token on 401 for protected (non-public) routes.
-    // Public route 401s (e.g. wrong password, unconfirmed email) should NOT clear the token.
     if (response.status === 401 && !isPublic) {
+      const refreshToken = localStorage.getItem('refresh_token');
+      
+      if (refreshToken) {
+        try {
+          // Attempt to refresh the token
+          const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+          });
+          
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            const newAccessToken = refreshData?.token || refreshData?.accessToken || refreshData?.data?.accessToken || refreshData?.data?.token;
+            
+            if (newAccessToken) {
+              localStorage.setItem('auth_token', newAccessToken);
+              // Retry the original request with the new token
+              const newHeaders = { ...headers, Authorization: `Bearer ${newAccessToken}` };
+              const retryResponse = await fetch(`${BASE_URL}${formattedEndpoint}`, {
+                ...options,
+                headers: newHeaders,
+              });
+              
+              if (retryResponse.ok) {
+                if (retryResponse.status === 204) return null;
+                return retryResponse.json();
+              }
+            }
+          }
+        } catch (refreshErr) {
+          console.error('Token refresh failed', refreshErr);
+        }
+      }
+      
+      // If we reach here, refresh failed or no refresh token exists
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_info');
       window.location.href = '/login';
     }
+    
     const error = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(error?.message ?? 'Request failed');
   }
